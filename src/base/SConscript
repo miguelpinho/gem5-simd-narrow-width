@@ -64,6 +64,9 @@ Source('pollevent.cc')
 Source('random.cc')
 if env['TARGET_ISA'] != 'null':
     Source('remote_gdb.cc')
+### MPINHO 2-mar-2019 BEGIN ###
+Source('resolution.cc')
+### MPINHO 2-mar-2019 END ###
 Source('socket.cc')
 Source('statistics.cc')
 Source('str.cc')
