@@ -14,8 +14,9 @@
  * @param val: up to 64-bit integer value
  *
  * @return resolution in bits (0 to 64 unsigned)
+ * @todo this function is exactly the same as base/bitfield.hh findMsbSet
  */
-uint8_t unsignedIntResolution(uint64_t val);
+int unsignedIntResolution(uint64_t val);
 
 /**
  * Returns the signed resolution, in bits, of an integer value. It ist the
@@ -28,7 +29,7 @@ uint8_t unsignedIntResolution(uint64_t val);
  *
  * @return resolution in bits (1 to 64, unsigned)
  */
-uint8_t signedIntResolution(uint64_t val);
+int signedIntResolution(uint64_t val);
 
 /**
  * Returns the bit blocks needed to represent an integer value.  For a given
@@ -41,7 +42,7 @@ uint8_t signedIntResolution(uint64_t val);
  *
  * @return count of needed blocks
  */
-uint8_t blockSIntResolution(uint64_t val, uint8_t block);
+int blockSIntResolution(uint64_t val, uint8_t block);
 
 /**
  * Returns the base 2 log of the blocks needed for an integer value.  For a
@@ -54,7 +55,7 @@ uint8_t blockSIntResolution(uint64_t val, uint8_t block);
  *
  * @return smallest power of two of blocks needed
  */
-uint8_t logSIntResolution(uint64_t val, uint8_t block);
+int logSIntResolution(uint64_t val, uint8_t block);
 
 #endif // __BASE_RESOLUTION_HH__
 /// MPINHO 2-mar-2019 END ///
