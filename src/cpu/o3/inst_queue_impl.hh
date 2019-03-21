@@ -48,10 +48,25 @@
 #include <limits>
 #include <vector>
 
+/// MPINHO 5-mar-2019 BEGIN ///
+#include "arch/generic/vec_reg.hh"
+
+/// MPINHO 5-mar-2019 END ///
 #include "base/logging.hh"
+
+/// MPINHO 5-mar-2019 BEGIN ///
+#include "base/resolution.hh"
+
+/// MPINHO 5-mar-2019 END ///
 #include "cpu/o3/fu_pool.hh"
 #include "cpu/o3/inst_queue.hh"
 #include "debug/IQ.hh"
+
+/// MPINHO 3-mar-2019 BEGIN ///
+#include "debug/SimdFuseOn.hh"
+#include "debug/SimdResolution.hh"
+
+/// MPINHO 3-mar-2019 END ///
 #include "enums/OpClass.hh"
 #include "params/DerivO3CPU.hh"
 #include "sim/core.hh"
@@ -119,6 +134,10 @@ InstructionQueue<Impl>::InstructionQueue(O3CPU *cpu_ptr, IEW *iew_ptr,
         memDepUnit[tid].init(params, tid);
         memDepUnit[tid].setIQ(this);
     }
+
+    // Initialize Width Decoder
+    widthDecoder.init(params);
+    widthDecoder.setIQ(this);
 
     resetState();
 
@@ -325,10 +344,42 @@ InstructionQueue<Impl>::regStats()
         ;
     fuBusyRate = fuBusy / iqInstsIssued;
 
+    /// MPINHO 18-mar-2019 BEGIN ///
+    numFuseVecChances
+        .name(name() + ".numFuseVecChances")
+        .desc("Number of second instructions found for fuse")
+        ;
+
+    numFuseVecFailNoMatch
+        .name(name() + ".numFuseVecFailNoMatch")
+        .desc("Number of fuse fails due to width unmatch")
+        ;
+
+    numFuseVecFailNoALU
+        .name(name() + ".numFuseVecFailNoALU")
+        .desc("Number of fuse fails due to unavailable proxy ALU")
+        ;
+
+    numFuseVecSuccess
+        .name(name() + ".numFuseVecSuccess")
+        .desc("Number of vector fuse successes")
+        ;
+
+    cyclesVecActive
+        .name(name() + ".cyclesVecActive")
+        .desc("Cycles with activity in the vector ALU")
+        ;
+    /// MPINHO 18-mar-2019 END ///
+
     for (ThreadID tid = 0; tid < numThreads; tid++) {
         // Tell mem dependence unit to reg stats as well.
         memDepUnit[tid].regStats();
     }
+
+    /// MPINHO 17-mar-2019 BEGIN ///
+    // Tell width decoder to reg stats as well.
+    widthDecoder.regStats();
+    /// MPINHO 17-mar-2019 END ///
 
     intInstQueueReads
         .name(name() + ".int_inst_queue_reads")
@@ -802,6 +853,14 @@ InstructionQueue<Impl>::scheduleReadyInsts()
     ListOrderIt order_it = listOrder.begin();
     ListOrderIt order_end_it = listOrder.end();
 
+    DynInstPtr last_vec_inst = NULL;
+    bool has_issued_vec = false;
+    int issued_fuse_vec = 0;
+    int issued_other_vec = 0;
+    const bool fuse = DTRACE(SimdFuseOn);
+
+    DPRINTF(SimdResolution, "================\n");
+
     while (total_issued < totalWidth && order_it != order_end_it) {
         OpClass op_class = (*order_it).queueType;
 
@@ -840,84 +899,181 @@ InstructionQueue<Impl>::scheduleReadyInsts()
         Cycles op_latency = Cycles(1);
         ThreadID tid = issuing_inst->threadNumber;
 
-        if (op_class != No_OpClass) {
-            idx = fuPool->getUnit(op_class);
-            if (issuing_inst->isFloating()) {
-                fpAluAccesses++;
-            } else if (issuing_inst->isVector()) {
-                vecAluAccesses++;
+        /// MPINHO 18-mar-2019 BEGIN ///
+        bool skip = false;
+        if (issuing_inst->isVector()) {
+            if (widthDecoder.isFuseVecType(issuing_inst)) {
+                // Is trying to issue vector inst with fuse.
+                DPRINTF(SimdResolution,
+                        "Trying to issue fuseable vector inst.\n");
+
+                if (issued_other_vec >= 2 || issued_fuse_vec >= 2) {
+                    // No more fuse slots available.
+                    skip = true;
+                } else {
+                    if (has_issued_vec) {
+                        // Possible fuse opportunity.
+                        numFuseVecChances++;
+
+                        bool can_fuse = false;
+
+                        // Verify if this vector inst can be fused.
+                        if (fuse) {
+                            can_fuse =
+                                widthDecoder.canFuseVecInst(last_vec_inst,
+                                                            issuing_inst);
+                        } else {
+                            can_fuse = false;
+                        }
+
+                        DPRINTF(SimdResolution,
+                                "Can fuse vector instruction: %s.\n",
+                                (can_fuse ? "true" : "false"));
+
+                        if (!can_fuse) {
+                            // Will not fuse vec due to width mismatch.
+                            numFuseVecFailNoMatch++;
+                        }
+
+                        skip = !can_fuse;
+                    }
+                }
             } else {
-                intAluAccesses++;
-            }
-            if (idx > FUPool::NoFreeFU) {
-                op_latency = fuPool->getOpLatency(op_class);
+                if (issued_other_vec >= 2 ||
+                    (issued_fuse_vec > 1 && issued_other_vec > 1)) {
+                    // Cannot accept any more regular inst.
+                    skip = true;
+                }
             }
         }
 
-        // If we have an instruction that doesn't require a FU, or a
-        // valid FU, then schedule for execution.
-        if (idx != FUPool::NoFreeFU) {
-            if (op_latency == Cycles(1)) {
-                i2e_info->size++;
-                instsToExecute.push_back(issuing_inst);
-
-                // Add the FU onto the list of FU's to be freed next
-                // cycle if we used one.
-                if (idx >= 0)
-                    fuPool->freeUnitNextCycle(idx);
-            } else {
-                bool pipelined = fuPool->isPipelined(op_class);
-                // Generate completion event for the FU
-                ++wbOutstanding;
-                FUCompletion *execution = new FUCompletion(issuing_inst,
-                                                           idx, this);
-
-                cpu->schedule(execution,
-                              cpu->clockEdge(Cycles(op_latency - 1)));
-
-                if (!pipelined) {
-                    // If FU isn't pipelined, then it must be freed
-                    // upon the execution completing.
-                    execution->setFreeFU();
+        // Skip this vector instruction, if it cannot be fused.
+        // FIXME: This is very crude for now. It is only a 1 normal/ 2 fuse
+        // configuration, and only tries to fuse with the most recent second
+        // instruction.
+        if (!skip) {
+        /// MPINHO 18-mar-2019 END ///
+            if (op_class != No_OpClass) {
+                idx = fuPool->getUnit(op_class);
+                if (issuing_inst->isFloating()) {
+                    fpAluAccesses++;
+                } else if (issuing_inst->isVector()) {
+                    vecAluAccesses++;
                 } else {
-                    // Add the FU onto the list of FU's to be freed next cycle.
-                    fuPool->freeUnitNextCycle(idx);
+                    intAluAccesses++;
+                }
+                if (idx > FUPool::NoFreeFU) {
+                    op_latency = fuPool->getOpLatency(op_class);
                 }
             }
 
-            DPRINTF(IQ, "Thread %i: Issuing instruction PC %s "
-                    "[sn:%lli]\n",
-                    tid, issuing_inst->pcState(),
-                    issuing_inst->seqNum);
+            // If we have an instruction that doesn't require a FU, or a
+            // valid FU, then schedule for execution.
+            if (idx != FUPool::NoFreeFU) {
+                if (op_latency == Cycles(1)) {
+                    i2e_info->size++;
+                    instsToExecute.push_back(issuing_inst);
 
-            readyInsts[op_class].pop();
+                    // Add the FU onto the list of FU's to be freed next
+                    // cycle if we used one.
+                    if (idx >= 0)
+                        fuPool->freeUnitNextCycle(idx);
+                } else {
+                    bool pipelined = fuPool->isPipelined(op_class);
+                    // Generate completion event for the FU
+                    ++wbOutstanding;
+                    FUCompletion *execution = new FUCompletion(issuing_inst,
+                                                            idx, this);
 
-            if (!readyInsts[op_class].empty()) {
-                moveToYoungerInst(order_it);
+                    cpu->schedule(execution,
+                                cpu->clockEdge(Cycles(op_latency - 1)));
+
+                    if (!pipelined) {
+                        // If FU isn't pipelined, then it must be freed
+                        // upon the execution completing.
+                        execution->setFreeFU();
+                    } else {
+                        // Add the FU onto the list of FU's to be freed next
+                        // cycle.
+                        fuPool->freeUnitNextCycle(idx);
+                    }
+                }
+
+                DPRINTF(IQ, "Thread %i: Issuing instruction PC %s "
+                        "[sn:%lli]\n",
+                        tid, issuing_inst->pcState(),
+                        issuing_inst->seqNum);
+
+                readyInsts[op_class].pop();
+
+                if (!readyInsts[op_class].empty()) {
+                    moveToYoungerInst(order_it);
+                } else {
+                    readyIt[op_class] = listOrder.end();
+                    queueOnList[op_class] = false;
+                }
+
+                /// MPINHO 3-mar-2019 BEGIN ///
+                if (issuing_inst->isVector()) {
+                    if (widthDecoder.isFuseVecType(issuing_inst)) {
+                        issued_fuse_vec++;
+
+                        if (!has_issued_vec) {
+                            // This is the first instruction of a fuseable
+                            // type.
+
+                            // Keep this vector information for next fuse.
+                            last_vec_inst = issuing_inst;
+                        } else {
+                            // An instruction was fused with success
+                            numFuseVecSuccess++;
+
+                            // Clean the vector information.
+                            last_vec_inst = NULL;
+                        }
+
+                        has_issued_vec = !has_issued_vec;
+                    } else {
+                        issued_other_vec++;
+                    }
+                }
+                /// MPINHO 3-mar-2019 END ///
+
+                issuing_inst->setIssued();
+                ++total_issued;
+
+    #if TRACING_ON
+                issuing_inst->issueTick = curTick() - issuing_inst->fetchTick;
+    #endif
+
+                if (!issuing_inst->isMemRef()) {
+                    // Memory instructions can not be freed from the IQ until
+                    // they complete.
+                    ++freeEntries;
+                    count[tid]--;
+                    issuing_inst->clearInIQ();
+                } else {
+                    memDepUnit[tid].issue(issuing_inst);
+                }
+
+                listOrder.erase(order_it++);
+                statIssuedInstType[tid][op_class]++;
             } else {
-                readyIt[op_class] = listOrder.end();
-                queueOnList[op_class] = false;
+                statFuBusy[op_class]++;
+                fuBusy[tid]++;
+                ++order_it;
+
+                /// MPINHO 18-mar-2019 BEGIN ///
+                if (widthDecoder.isFuseVecType(issuing_inst) &&
+                    has_issued_vec) {
+                    // Fuse failed because there is no ALU available!
+                    // FIXME: find a way to increase the ALU count just for
+                    // this.
+
+                    numFuseVecFailNoALU++;
+                }
+                /// MPINHO 18-mar-2019 END ///
             }
-
-            issuing_inst->setIssued();
-            ++total_issued;
-
-#if TRACING_ON
-            issuing_inst->issueTick = curTick() - issuing_inst->fetchTick;
-#endif
-
-            if (!issuing_inst->isMemRef()) {
-                // Memory instructions can not be freed from the IQ until they
-                // complete.
-                ++freeEntries;
-                count[tid]--;
-                issuing_inst->clearInIQ();
-            } else {
-                memDepUnit[tid].issue(issuing_inst);
-            }
-
-            listOrder.erase(order_it++);
-            statIssuedInstType[tid][op_class]++;
         } else {
             statFuBusy[op_class]++;
             fuBusy[tid]++;
@@ -925,14 +1081,21 @@ InstructionQueue<Impl>::scheduleReadyInsts()
         }
     }
 
+    /// MPINHO 19-mar-2019 BEGIN ///
+    if (issued_fuse_vec > 0) {
+        cyclesVecActive++;
+    }
+    /// MPINHO 19-mar-2019 END ///
+
     numIssuedDist.sample(total_issued);
     iqInstsIssued+= total_issued;
 
     // If we issued any instructions, tell the CPU we had activity.
     // @todo If the way deferred memory instructions are handeled due to
-    // translation changes then the deferredMemInsts condition should be removed
-    // from the code below.
-    if (total_issued || !retryMemInsts.empty() || !deferredMemInsts.empty()) {
+    // translation changes then the deferredMemInsts condition should be
+    // removed from the code below.
+    if (total_issued || !retryMemInsts.empty() ||
+        !deferredMemInsts.empty()) {
         cpu->activityThisCycle();
     } else {
         DPRINTF(IQ, "Not able to schedule any instructions.\n");

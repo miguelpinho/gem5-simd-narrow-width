@@ -210,6 +210,22 @@ class StaticInst : public RefCounted, public StaticInstFlags
     /// Operation class.  Used to select appropriate function unit in issue.
     OpClass opClass()     const { return _opClass; }
 
+    /// MPINHO 16-mar-2019 BEGIN ///
+    /// Only for ARMv8
+    /// FIXME: This should not be here!
+    /** */
+    unsigned vecElemSize() const {
+      return (unsigned) bits(machInst, 23, 22);
+    }
+
+    /** */
+    unsigned vecNumElem() const {
+      unsigned q = (unsigned)bits(machInst, 30);
+      unsigned size = (unsigned)bits(machInst, 23, 22);
+
+      return ((8 << q) >> size);
+    }
+    /// MPINHO 16-mar-2019 END ///
 
     /// Return logical index (architectural reg num) of i'th destination reg.
     /// Only the entries from 0 through numDestRegs()-1 are valid.

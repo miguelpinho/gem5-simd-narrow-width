@@ -89,6 +89,9 @@ class InstructionQueue
 
     typedef typename Impl::CPUPol::IEW IEW;
     typedef typename Impl::CPUPol::MemDepUnit MemDepUnit;
+    /// MPINHO 16-mar-2019 BEGIN ///
+    typedef typename Impl::CPUPol::WidthDecoder WidthDecoder;
+    /// MPINHO 16-mar-2019 END ///
     typedef typename Impl::CPUPol::IssueStruct IssueStruct;
     typedef typename Impl::CPUPol::TimeStruct TimeStruct;
 
@@ -293,6 +296,11 @@ class InstructionQueue
      *  between instructions.
      */
     MemDepUnit memDepUnit[Impl::MaxThreads];
+
+    /// MPINHO 15-mar-2019 BEGIN ///
+    /** Instruction width decoder. */
+    WidthDecoder widthDecoder;
+    /// MPINHO 15-mar-2019 END ///
 
     /** The queue to the execute stage.  Issued instructions will be written
      *  into it.
@@ -531,6 +539,19 @@ class InstructionQueue
     Stats::Vector fuBusy;
     /** Number of times the FU was busy per instruction issued. */
     Stats::Formula fuBusyRate;
+
+    /// MPINHO 18-mar-2019 BEGIN ///
+    /* Number of second vector instructions found for fuse. */
+    Stats::Scalar numFuseVecChances;
+    /* Number of vector fuse fails due to width unmatch. */
+    Stats::Scalar numFuseVecFailNoMatch;
+    /* Number of vector fuse fails due to unavailable proxy ALU. */
+    Stats::Scalar numFuseVecFailNoALU;
+    /* Number of vector fuse successes. */
+    Stats::Scalar numFuseVecSuccess;
+    /// MPINHO 18-mar-2019 END ///
+    Stats::Scalar cyclesVecActive;
+    /// MPINHO 18-mar-2019 END ///
    public:
     Stats::Scalar intInstQueueReads;
     Stats::Scalar intInstQueueWrites;

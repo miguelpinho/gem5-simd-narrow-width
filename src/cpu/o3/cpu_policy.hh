@@ -48,6 +48,11 @@
 #include "cpu/o3/rob.hh"
 #include "cpu/o3/store_set.hh"
 
+/// MPINHO 16-mar-2019 BEGIN ///
+#include "cpu/o3/width_decoder.hh"
+
+/// MPINHO 16-mar-2019 END ///
+
 /**
  * Struct that defines the key classes to be used by the CPU.  All
  * classes use the typedefs defined here to determine what are the
@@ -70,6 +75,10 @@ struct SimpleCPUPolicy
     typedef InstructionQueue<Impl> IQ;
     /** Typedef for the memory dependence unit. */
     typedef ::MemDepUnit<StoreSet, Impl> MemDepUnit;
+    /// MPINHO 15-mar-2019 BEGIN ///
+    /** Typedef for the width decode unit. */
+    typedef ::WidthDecoder<Impl> WidthDecoder;
+    /// MPINHO 15-mar-2019 END ///
     /** Typedef for the LSQ. */
     typedef ::LSQ<Impl> LSQ;
     /** Typedef for the thread-specific LSQ units. */
