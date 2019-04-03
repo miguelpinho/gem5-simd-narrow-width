@@ -6,6 +6,7 @@
 #include "base/logging.hh"
 #include "base/resolution.hh"
 #include "base/trace.hh"
+#include "cpu/o3/comm.hh"
 #include "cpu/o3/inst_queue.hh"
 #include "cpu/o3/width_decoder.hh"
 #include "debug/WidthDecoder.hh"
@@ -44,24 +45,31 @@ WidthDecoder<Impl>::init(DerivO3CPUParams *params)
     _name = csprintf("%s.widthDecoder", params->name);
 }
 
+// template <class Impl>
+// double
+// WidthDecoder<Impl>::vecValWidthUsage(const VecRegContainer &)
+// {
+
+// }
+
 template <class Impl>
-std::bitset<WidthDecoder<Impl>::NumVecResolBits>
+VecWidthCode
 WidthDecoder<Impl>::vecInstWidthMask(DynInstPtr &inst)
 {
     unsigned eSize = inst->staticInst->vecElemSize();
     unsigned nElem = inst->staticInst->vecNumElem();
 
     // uses the architecture vec width for the mask size
-    std::bitset<NumVecResolBits> mask;
+    VecWidthCode mask;
 
     if (inst->opClass() == Enums::SimdMult ||
         inst->opClass() == Enums::SimdMultAcc) {
         // multiplicand source registers
         int srcVn = 2, srcVm = 3;
 
-        std::bitset<NumVecResolBits> maskVn =
+        VecWidthCode maskVn =
             vecSrcRegWidthMask(inst, srcVn, eSize, nElem);
-        std::bitset<NumVecResolBits> maskVm =
+        VecWidthCode maskVm =
             vecSrcRegWidthMask(inst, srcVm, eSize, nElem);
 
         // default: operation width is the max of operands
@@ -69,59 +77,150 @@ WidthDecoder<Impl>::vecInstWidthMask(DynInstPtr &inst)
         mask = maskVn|maskVm;
     }
 
-    DPRINTF(WidthDecoder, "Vector inst mask is %s (eSize=%i).\n",
+    DPRINTF(WidthDecoder, "Vector inst code is %s (eSize=%i).\n",
             mask.to_string(),
             eSize);
 
     return mask;
 }
 
+// /**
+//  * @todo Change to use resol granularity.
+//  */
+// template <class Impl>
+// VecWidthCode
+// WidthDecoder<Impl>::vecValWidthMask(const VecRegContainer &val,
+//                                     unsigned eSize,
+//                                     unsigned nElem)
+// {
+//     // uses the architecture vec width for the mask size
+//     VecWidthCode mask;
+
+//     // TODO: check if eSize and nElem match architecture
+
+//     if (eSize == 0) {
+//         // 16x8-bit
+//         // Specific for ARMv8 NEON
+//         mask = VecWidthCode(16, 8);
+
+//         const VecRegT<int8_t, 16, true> &vsrc8 = val;
+
+//         for (size_t i = 0; i < nElem; i++) {
+//             int rsl = signedIntResolution((int64_t) vsrc8[i]);
+
+//             DPRINTF(WidthDecoder, "    Vec Lane %i: val=%d, rsl=%d\n",
+//                     i, vsrc8[i], rsl);
+
+//             mask.set(i, rsl);
+//         }
+//     } else if (eSize == 1) {
+//         // 8x16-bit
+//         // Specific for ARMv8 NEON
+//         mask = VecWidthCode(8, 16);
+
+//         const VecRegT<int16_t, 8, true> &vsrc16 = val;
+
+//         for (size_t i = 0; i < nElem; i++) {
+//             int rsl = signedIntResolution((int64_t) vsrc16[i]);
+
+//             DPRINTF(WidthDecoder, "    Vec Lane %i: val=%d, rsl=%d\n",
+//                     i, vsrc16[i], rsl);
+
+//             mask.set(i, rsl);
+//         }
+//     } else if (eSize == 2) {
+//         // 4x32-bit
+//         // Specific for ARMv8 NEON
+//         mask = VecWidthCode(4, 32);
+
+//         const VecRegT<int32_t, 4, true> &vsrc32 = val;
+
+//         for (size_t i = 0; i < nElem; i++)
+//         {
+//             int rsl = signedIntResolution((int64_t) vsrc32[i]);
+
+//             DPRINTF(WidthDecoder, "    Vec Lane %i: val=%d, rsl=%d\n",
+//                     i, vsrc32[i], rsl);
+
+//             mask.set(i, rsl);
+//         }
+//     } else if (eSize == 3) {
+//         // 2x64-bit
+//         // Specific for ARMv8 NEON
+//         mask = VecWidthCode(2, 64);
+
+//         const VecRegT<int64_t, 2, true> &vsrc64 = val;
+
+//         for (size_t i = 0; i < nElem; i++)
+//         {
+//             int rsl = signedIntResolution(vsrc64[i]);
+
+//             DPRINTF(WidthDecoder, "    Vec Lane %i: val=%d, rsl=%d\n",
+//                     i, vsrc64[i], rsl);
+
+//             mask.set(i, rsl);
+//         }
+//     } else {
+//         panic("Unknown eSize %d.", eSize);
+//     }
+
+//     DPRINTF(WidthDecoder, "Source operand %d mask is %s (eSize=%i).\n",
+//             src,
+//             mask.to_string(),
+//             eSize);
+
+//     return mask;
+// }
+
 /**
  * @todo Change to use resol granularity.
  */
 template <class Impl>
-std::bitset<WidthDecoder<Impl>::NumVecResolBits>
+VecWidthCode
 WidthDecoder<Impl>::vecSrcRegWidthMask(DynInstPtr &inst, int src,
                                        unsigned eSize, unsigned nElem)
 {
     // uses the architecture vec width for the mask size
-    std::bitset<NumVecResolBits> mask;
+    VecWidthCode mask;
 
     // TODO: check if eSize and nElem match architecture
 
-    if (eSize == 0)
-    {
-        // 8-bit
+    if (eSize == 0) {
+        // 16x8-bit
+        // Specific for ARMv8 NEON
+        mask = VecWidthCode(16, 8);
 
-        mask.set();
-    }
-    else if (eSize == 1)
-    {
-        // 16-bit
-        // Specific for ARMv8
+        const VecRegT<int8_t, 16, true> &vsrc8 =
+            inst->readVecRegOperand(inst->staticInst.get(), src);
+
+        for (size_t i = 0; i < nElem; i++) {
+            int rsl = signedIntResolution((int64_t) vsrc8[i]);
+
+            DPRINTF(WidthDecoder, "    Vec Lane %i: val=%d, rsl=%d\n",
+                    i, vsrc8[i], rsl);
+
+            mask.set(i, rsl);
+        }
+    } else if (eSize == 1) {
+        // 8x16-bit
+        // Specific for ARMv8 NEON
+        mask = VecWidthCode(8, 16);
 
         const VecRegT<int16_t, 8, true> &vsrc16 =
             inst->readVecRegOperand(inst->staticInst.get(), src);
 
-        for (size_t i = 0; i < nElem; i++)
-        {
+        for (size_t i = 0; i < nElem; i++) {
             int rsl = signedIntResolution((int64_t) vsrc16[i]);
 
             DPRINTF(WidthDecoder, "    Vec Lane %i: val=%d, rsl=%d\n",
                     i, vsrc16[i], rsl);
 
-            int idx = (16 >> ResolGranularity) * i;
-            if (rsl > 8)
-            {
-                mask.set(idx + 1);
-            }
-            mask.set(idx);
+            mask.set(i, rsl);
         }
-    }
-    else if (eSize == 2)
-    {
-        // 32-bit
-        // Specific for ARMv8
+    } else if (eSize == 2) {
+        // 4x32-bit
+        // Specific for ARMv8 NEON
+        mask = VecWidthCode(4, 32);
 
         const VecRegT<int32_t, 4, true> &vsrc32 =
             inst->readVecRegOperand(inst->staticInst.get(), src);
@@ -133,16 +232,13 @@ WidthDecoder<Impl>::vecSrcRegWidthMask(DynInstPtr &inst, int src,
             DPRINTF(WidthDecoder, "    Vec Lane %i: val=%d, rsl=%d\n",
                     i, vsrc32[i], rsl);
 
-            int idx = (32 >> ResolGranularity) * i; // TODO: use shift
-            if (rsl > 24) { mask.set(idx + 3); }
-            if (rsl > 16) { mask.set(idx + 2); }
-            if (rsl >  8) { mask.set(idx + 1); }
-            mask.set(idx);
+            mask.set(i, rsl);
         }
-    }
-    else if (eSize == 3)
-    {
-        // 64-bit
+    } else if (eSize == 3) {
+        // 2x64-bit
+        // Specific for ARMv8 NEON
+        mask = VecWidthCode(2, 64);
+
         const VecRegT<int64_t, 2, true> &vsrc64 =
             inst->readVecRegOperand(inst->staticInst.get(), src);
 
@@ -153,19 +249,9 @@ WidthDecoder<Impl>::vecSrcRegWidthMask(DynInstPtr &inst, int src,
             DPRINTF(WidthDecoder, "    Vec Lane %i: val=%d, rsl=%d\n",
                     i, vsrc64[i], rsl);
 
-            int idx = (64 >> ResolGranularity) * i; // TODO: use shift
-            if (rsl > 56) { mask.set(idx + 7); }
-            if (rsl > 48) { mask.set(idx + 6); }
-            if (rsl > 40) { mask.set(idx + 5); }
-            if (rsl > 32) { mask.set(idx + 4); }
-            if (rsl > 24) { mask.set(idx + 3); }
-            if (rsl > 16) { mask.set(idx + 2); }
-            if (rsl >  8) { mask.set(idx + 1); }
-            mask.set(idx);
+            mask.set(i, rsl);
         }
-    }
-    else
-    {
+    } else {
         panic("Unknown eSize %d.", eSize);
     }
 
@@ -191,8 +277,8 @@ WidthDecoder<Impl>::canFuseVecInst(DynInstPtr &inst1, DynInstPtr &inst2)
         return false;
     }
 
-    std::bitset<NumVecResolBits> mask1 = vecInstWidthMask(inst1);
-    std::bitset<NumVecResolBits> mask2 = vecInstWidthMask(inst2);
+    VecWidthCode mask1 = vecInstWidthMask(inst1);
+    VecWidthCode mask2 = vecInstWidthMask(inst2);
 
     DPRINTF(WidthDecoder, "Trying to fuse %s and %s.\n",
             mask1.to_string(),
@@ -200,7 +286,7 @@ WidthDecoder<Impl>::canFuseVecInst(DynInstPtr &inst1, DynInstPtr &inst2)
 
     // Optimal: count number of set bits in mask.
     // Try to pack as much as possible, even if unfeasible.
-    return (mask1.count() + mask2.count()) <= NumVecResolBits;
+    return (mask1.count() + mask2.count()) <= SizeVecRegister;
 }
 
 template <class Impl>

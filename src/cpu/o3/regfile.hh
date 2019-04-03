@@ -54,6 +54,7 @@
 #include "config/the_isa.hh"
 #include "cpu/o3/comm.hh"
 #include "debug/IEW.hh"
+#include "debug/RegFileUsage.hh" /// MPINHO 2-april-2019
 #include "enums/VecRegRenameMode.hh"
 
 class UnifiedFreeList;

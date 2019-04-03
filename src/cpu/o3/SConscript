@@ -51,9 +51,8 @@ if 'O3CPU' in env['CPU_MODELS']:
     Source('lsq.cc')
     Source('lsq_unit.cc')
     Source('mem_dep_unit.cc')
-    ### MPINHO 12-mar-2019 BEGIN ###
-    Source('width_decoder.cc')
-    ### MPINHO 12-mar-2019 END ###
+    Source('width_code.cc') ### MPINHO 12-mar-2019
+    Source('width_decoder.cc') ### MPINHO 12-mar-2019
     Source('regfile.cc')
     Source('rename.cc')
     Source('rename_map.cc')
@@ -71,15 +70,12 @@ if 'O3CPU' in env['CPU_MODELS']:
     DebugFlag('O3CPU')
     DebugFlag('ROB')
     DebugFlag('Rename')
+    DebugFlag('RegFileUsage') ### MPINHO 2-april-2019
     DebugFlag('Scoreboard')
-    ### MPINHO 3-mar-2019 BEGIN ###
-    DebugFlag('SimdResolution')
-    DebugFlag('SimdFuseOn')
-    ### MPINHO 3-mar-2019 END ###
+    DebugFlag('SimdResolution') ### MPINHO 3-mar-2019
+    DebugFlag('SimdFuseOn') ### MPINHO 3-mar-2019
     DebugFlag('StoreSet')
-    ### MPINHO 16-mar-2019 BEGIN ###
-    DebugFlag('WidthDecoder')
-    ### MPINHO 16-mar-2019 END ###
+    DebugFlag('WidthDecoder') ### MPINHO 16-mar-2019
     DebugFlag('Writeback')
 
     CompoundFlag('O3CPUAll', [ 'Fetch', 'Decode', 'Rename', 'IEW', 'Commit',

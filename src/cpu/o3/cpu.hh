@@ -846,6 +846,12 @@ class FullO3CPU : public BaseO3CPU
     //number of vector register file accesses
     mutable Stats::Scalar vecRegfileReads;
     Stats::Scalar vecRegfileWrites;
+    /// MPINHO 27-mar-2019 BEGIN ///
+    //histogram of vector register file usage
+    Stats::Histogram vecRegFileUsage;
+    //histogram of vector register file usage percentage
+    Stats::Histogram vecRegFileUsagePerc;
+    /// MPINHO 27-mar-2019 END ///
     //number of predicate register file accesses
     mutable Stats::Scalar vecPredRegfileReads;
     Stats::Scalar vecPredRegfileWrites;

@@ -53,6 +53,7 @@
 #include "cpu/o3/rename.hh"
 #include "cpu/reg_class.hh"
 #include "debug/Activity.hh"
+#include "debug/RegFileUsage.hh" /// MPINHO 2-april-2019
 #include "debug/Rename.hh"
 #include "debug/O3PipeView.hh"
 #include "params/DerivO3CPU.hh"
@@ -976,6 +977,15 @@ DefaultRename<Impl>::doSquash(const InstSeqNum &squashed_seq_num, ThreadID tid)
 
             // Put the renamed physical register back on the free list.
             freeList->addReg(hb_it->newPhysReg);
+
+            /// MPINHO 2-april-2019 BEGIN ///
+            if (hb_it->newPhysReg->isVectorPhysReg()) {
+                DPRINTF(RegFileUsage,
+                        "Vector free list updated!"
+                        "There are now %d free vector registers.\n",
+                        freeList->numFreeVecRegs());
+            }
+            /// MPINHO 2-april-2019 END ///
         }
 
         // Notify potential listeners that the register mapping needs to be
@@ -1037,6 +1047,15 @@ DefaultRename<Impl>::removeFromHistory(InstSeqNum inst_seq_num, ThreadID tid)
         }
 
         ++renameCommittedMaps;
+
+        /// MPINHO 2-april-2019 BEGIN ///
+        if (hb_it->prevPhysReg->isVectorPhysReg()) {
+            DPRINTF(RegFileUsage,
+                    "Vector free list updated!"
+                    "There are now %d free vector registers.\n",
+                    freeList->numFreeVecRegs());
+        }
+        /// MPINHO 2-april-2019 END ///
 
         historyBuffer[tid].erase(hb_it--);
     }
@@ -1156,6 +1175,15 @@ DefaultRename<Impl>::renameDestRegs(const DynInstPtr &inst, ThreadID tid)
                             rename_result.second);
 
         ++renameRenamedOperands;
+
+        /// MPINHO 2-april_2019 BEGIN ///
+        if (dest_reg.isVecReg()) {
+            DPRINTF(RegFileUsage,
+                    "Vector free list updated!"
+                    "There are now %d free vector registers.\n",
+                    freeList->numFreeVecRegs());
+        }
+        /// MPINHO 2-april_2019 BEGIN ///
     }
 }
 

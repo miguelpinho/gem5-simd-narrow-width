@@ -169,6 +169,14 @@ PhysRegFile::initFreeList(UnifiedFreeList *freeList)
     else
         freeList->addRegs(vecElemIds.begin(), vecElemIds.end());
 
+    /// MPINHO 2-april-2019 BEGIN ///
+    DPRINTF(RegFileUsage,
+            "For %d physical vector registers, "
+            "the initial number of free registers is %d.\n",
+            numPhysicalVecRegs,
+            freeList->numFreeVecRegs());
+    /// MPINHO 2-april-2019 END ///
+
     // The next batch of the registers are the predicate physical
     // registers; put them onto the predicate free list.
     for (reg_idx = 0; reg_idx < numPhysicalVecPredRegs; reg_idx++) {

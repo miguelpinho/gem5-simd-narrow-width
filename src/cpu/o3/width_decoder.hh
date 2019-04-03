@@ -3,7 +3,6 @@
 #define __CPU_O3_WIDTH_DECODER_HH__
 
 #include <algorithm>
-#include <bitset>
 #include <iostream>
 #include <utility>
 #include <vector>
@@ -14,6 +13,7 @@
 #include "base/types.hh"
 
 // #include "cpu/o3/isa_specific.hh"
+#include "cpu/o3/width_code.hh"
 #include "cpu/op_class.hh"
 #include "debug/WidthDecoder.hh"
 
@@ -55,57 +55,6 @@ class WidthDecoder
     // Number of bits of the resolution masks
     static constexpr size_t NumVecResolBits = (128) >> ResolGranularity;
 
-    /* TODO: Class for vector width information encoding. */
-    // class VecWidthCode
-    // {
-    //   private:
-    //     int eBits;
-    //     int nElem;
-    //     int codeResol;
-    //     std::vector<int> code;
-
-    //   public:
-    //     VecWidthCode(int _eSize)
-    //     {
-    //       assert(_eSize >= 0 && _eSize <= 3);
-
-    //       eBits = 1 << (3 + _eSize);
-    //       nElem = SizeVecRegister >> (3 + _eSize);
-    //       codeResol = eBits >> ResolGranularity;
-    //       code = std::vector<int>(nElem);
-    //     }
-
-    //     VecWidthCode(VecWidthCode &a, VecWidthCode &b)
-    //     {
-    //       assert(a->eBits() == b->eBits());
-
-    //       eBits = a->eBits;
-    //       nElem = a->nElem;
-    //       codeResol = a->codeResol;
-    //       code = std::vector<int>(nElem);
-
-    //       for (int i = 0; i <= nElem; i++) {
-    //         code[i] = std::max(a->code[i], b->code[i]);
-    //       }
-    //     }
-
-    //     ~VecWidthCode() {}
-
-    //     void
-    //     set(int pos, int val) {
-    //       assert(pos >= 0 && pos <= nElem);
-
-    //       code[pos] = val;
-    //     }
-
-    //     void
-    //     get(int pos) {
-    //       assert(pos >= 0 && pos <= nElem);
-
-    //       return (code[pos]);
-    //     }
-    // };
-
     /** Empty constructor. */
     WidthDecoder();
 
@@ -128,10 +77,10 @@ class WidthDecoder
     void setIQ(InstructionQueue<Impl> *iq_ptr);
 
     /** Return width maks of a vector instruction. */
-    std::bitset<NumVecResolBits> vecInstWidthMask(DynInstPtr &inst);
+    VecWidthCode vecInstWidthMask(DynInstPtr &inst);
 
     /** Return width maks of one of the vector source registers. */
-    std::bitset<NumVecResolBits>
+    VecWidthCode
     vecSrcRegWidthMask(DynInstPtr &inst, int src, unsigned eSize,
                        unsigned nElem);
 

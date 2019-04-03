@@ -61,6 +61,7 @@
 #include "debug/Drain.hh"
 #include "debug/O3CPU.hh"
 #include "debug/Quiesce.hh"
+#include "debug/RegFileUsage.hh" /// MPINHO 2-april-2019
 #include "enums/MemoryMode.hh"
 #include "sim/core.hh"
 #include "sim/full_system.hh"
@@ -559,6 +560,17 @@ FullO3CPU<Impl>::regStats()
         .desc("number of predicate regfile writes")
         .prereq(vecPredRegfileWrites);
 
+    /// MPINHO 27-mar-2019 BEGIN ///
+    vecRegFileUsage.name(name() + ".vec_reg_file_usage")
+        .desc("number of vector registers used per cycle")
+        .init(16) // number of buckets
+        ;
+    vecRegFileUsagePerc.name(name() + ".vec_reg_file_usage_perc")
+        .desc("percentage of vector register file usage per cycle")
+        .init(16) // number of buckets
+        ;
+    /// MPINHO 27-mar-2019 END ///
+
     ccRegfileReads
         .name(name() + ".cc_regfile_reads")
         .desc("number of cc regfile reads")
@@ -637,6 +649,26 @@ FullO3CPU<Impl>::tick()
         updateThreadPriority();
 
     tryDrain();
+
+    /// MPINHO 27-mar-2019 BEGIN ///
+    DPRINTF(RegFileUsage,
+            "Tick! %d free vector registers.\n",
+            freeList.numFreeVecRegs());
+    if (vecMode == Enums::Full) {
+        vecRegFileUsage.sample(regFile.numVecPhysRegs()
+                               - freeList.numFreeVecRegs());
+        vecRegFileUsagePerc.sample((regFile.numVecPhysRegs()
+                                   - freeList.numFreeVecRegs()) * 100.0
+                                   / regFile.numVecPhysRegs());
+    } else {
+        vecRegFileUsage.sample((regFile.numVecElemPhysRegs()
+                                - freeList.numFreeVecElems())
+                                / NumVecElemPerVecReg);
+        vecRegFileUsagePerc.sample((regFile.numVecElemPhysRegs()
+                                   - freeList.numFreeVecElems()) * 100.0
+                                   / regFile.numVecElemPhysRegs());
+    }
+    /// MPINHO 27-mar-2019 END ///
 }
 
 template <class Impl>
