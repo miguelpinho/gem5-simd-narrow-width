@@ -58,6 +58,14 @@ class SMTQueuePolicy(ScopedEnum):
 class CommitPolicy(ScopedEnum):
     vals = [ 'Aggressive', 'RoundRobin', 'OldestReady' ]
 
+### MPINHO 07-may-2019 BEGIN ###
+class WidthDefinition(ScopedEnum):
+    vals = [ 'Signed', 'Unsigned' ]
+
+class WidthPackingPolicy(ScopedEnum):
+    vals = [ 'Disabled', 'Simple', 'Optimal', 'MultiElement' ]
+### MPINHO 07-may-2019 END ###
+
 class DerivO3CPU(BaseCPU):
     type = 'DerivO3CPU'
     cxx_header = 'cpu/o3/deriv.hh'
@@ -178,6 +186,16 @@ class DerivO3CPU(BaseCPU):
                                        "Branch Predictor")
     needsTSO = Param.Bool(buildEnv['TARGET_ISA'] == 'x86',
                           "Enable TSO Memory model")
+
+    ### MPINHO 07-may-2019 BEGIN ###
+    # width config parameters
+    widthDefinition = Param.WidthDefinition('Signed',
+                                            "Width definition to use")
+    widthBlockSize = Param.Unsigned(8, "Width block size in bits")
+    widthPackingPolicy = Param.WidthPackingPolicy('Disabled',
+                                                  "Policy on valid packing "
+                                                  "requirements")
+    ### MPINHO 07-may-2019 END ###
 
     def addCheckerCpu(self):
         if buildEnv['TARGET_ISA'] in ['arm']:

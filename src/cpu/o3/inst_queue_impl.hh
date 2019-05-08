@@ -48,25 +48,14 @@
 #include <limits>
 #include <vector>
 
-/// MPINHO 5-mar-2019 BEGIN ///
-#include "arch/generic/vec_reg.hh"
-
-/// MPINHO 5-mar-2019 END ///
+#include "arch/generic/vec_reg.hh" /// MPINHO 5-mar-2019 ///
 #include "base/logging.hh"
-
-/// MPINHO 5-mar-2019 BEGIN ///
-#include "base/resolution.hh"
-
-/// MPINHO 5-mar-2019 END ///
+#include "base/resolution.hh" /// MPINHO 5-mar-2019 ///
 #include "cpu/o3/fu_pool.hh"
 #include "cpu/o3/inst_queue.hh"
 #include "debug/IQ.hh"
-
-/// MPINHO 3-mar-2019 BEGIN ///
-#include "debug/SimdFuseOn.hh"
-#include "debug/SimdResolution.hh"
-
-/// MPINHO 3-mar-2019 END ///
+#include "debug/SimdFuseOn.hh" /// MPINHO 3-mar-2019 ///
+#include "debug/SimdResolution.hh" /// MPINHO 3-mar-2019 ///
 #include "enums/OpClass.hh"
 #include "params/DerivO3CPU.hh"
 #include "sim/core.hh"

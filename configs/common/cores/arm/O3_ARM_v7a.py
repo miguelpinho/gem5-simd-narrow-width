@@ -72,7 +72,8 @@ class O3_ARM_v7a_FP(FUDesc):
                OpDesc(opClass='FloatMult', opLat=4),
                OpDesc(opClass='FloatMultAcc', opLat=5),
                OpDesc(opClass='FloatMisc', opLat=3) ]
-    count = 2
+    count = 3
+    # count = 2
 
 
 # Load/Store Units
@@ -118,12 +119,16 @@ class O3_ARM_v7a_3(DerivO3CPU):
     iewToRenameDelay = 1
     commitToRenameDelay = 1
     commitToIEWDelay = 1
-    fetchWidth = 3
-    fetchBufferSize = 16
+    # fetchWidth = 3
+    fetchWidth = 4
+    # fetchBufferSize = 16
+    fetchBufferSize = 32
     fetchToDecodeDelay = 3
-    decodeWidth = 3
+    # decodeWidth = 3
+    decodeWidth = 4
     decodeToRenameDelay = 2
-    renameWidth = 3
+    # renameWidth = 3
+    renameWidth = 4
     renameToIEWDelay = 1
     issueToExecuteDelay = 1
     dispatchWidth = 6
@@ -139,9 +144,12 @@ class O3_ARM_v7a_3(DerivO3CPU):
     forwardComSize = 5
     numPhysIntRegs = 128
     numPhysFloatRegs = 192
-    numPhysVecRegs = 48
-    numIQEntries = 32
-    numROBEntries = 40
+    # numPhysVecRegs = 48
+    numPhysVecRegs = 100
+    # numIQEntries = 32
+    numIQEntries = 42
+    # numROBEntries = 40
+    numROBEntries = 60
 
     switched_out = False
     branchPred = O3_ARM_v7a_BP()

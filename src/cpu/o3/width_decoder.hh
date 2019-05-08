@@ -7,15 +7,13 @@
 #include <utility>
 #include <vector>
 
-// #include "arch/isa_traits.hh"
-// #include "config/the_isa.hh"
 #include "base/statistics.hh"
 #include "base/types.hh"
-
-// #include "cpu/o3/isa_specific.hh"
 #include "cpu/o3/width_code.hh"
 #include "cpu/op_class.hh"
 #include "debug/WidthDecoder.hh"
+#include "enums/WidthDefinition.hh"
+#include "enums/WidthPackingPolicy.hh"
 
 struct DerivO3CPUParams;
 
@@ -89,6 +87,22 @@ class WidthDecoder
 
     /** Returns true if vector instruction is of type that can be fused. */
     bool isFuseVecType(DynInstPtr &inst);
+
+    /// MPINHO 08-may-2019 BEGIN ///
+    ///////////////////
+    // Parameters
+    ///////////////////
+
+    /** Definition for operand and operation width/resolution. */
+    WidthDefinition widthDef;
+
+    /** Block size for width/resolution considerations. */
+    unsigned blockSize;
+
+    /** Policy for packing operations. */
+    WidthPackingPolicy packingPolicy;
+    /// MPINHO 08-may-2019 END ///
+
 
   private:
     /** Pointer to the Instruction Queue. */

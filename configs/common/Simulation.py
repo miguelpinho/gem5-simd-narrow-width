@@ -483,6 +483,13 @@ def run(options, root, testsys, cpu_class):
                 bpClass = BPConfig.get(options.bp_type)
                 switch_cpus[i].branchPred = bpClass()
 
+            ### MPINHO 08-may-2019 BEGIN ###
+            if issubclass(cpu_class, m5.objects.DerivO3CPU):
+                switch_cpus[i].widthDefinition = options.width_define
+                switch_cpus[i].widthBlockSize = options.width_block
+                switch_cpus[i].widthPackingPolicy = options.packing_policy
+            ### MPINHO 08-may-2019 END ###
+
         # If elastic tracing is enabled attach the elastic trace probe
         # to the switch CPUs
         if options.elastic_trace_en:

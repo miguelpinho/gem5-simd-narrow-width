@@ -391,3 +391,23 @@ def addFSOptions(parser):
     parser.add_option("--command-line-file", action="store",
                       default=None, type="string",
                       help="File with a template for the kernel command line")
+
+    ### MPINHO 08-may-2019 BEGIN ###
+    if buildEnv['TARGET_ISA'] == "arm":
+        # Width configuration options
+        parser.add_option("--width-define", action="store", type="choice",
+                          default="Signed", choices=["Signed", "Unsigned"],
+                          help="How the width of a value or operation is "
+                          "calculated.")
+
+        parser.add_option("--width-block", action="store", type="int",
+                          default=8, help="Size of blocks considered"
+                          " for width optimizations.")
+
+        parser.add_option("--packing-policy", action="store", type="choice",
+                          default="Disabled",
+                          choices=['Disabled', 'Simple', 'Optimal',
+                                   'MultiElement'],
+                          help="Criteria to accept the packing of"
+                               " two operations.")
+    ### MPINHO 08-may-2019 END ###

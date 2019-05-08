@@ -43,6 +43,17 @@ WidthDecoder<Impl>::init(DerivO3CPUParams *params)
      DPRINTF(WidthDecoder, "Creating WidthDecoder object.\n");
 
     _name = csprintf("%s.widthDecoder", params->name);
+
+    /// MPINHO 08-may-2019 BEGIN ///
+    /** Parameters */
+    widthDef = params->widthDefinition;
+    blockSize = params->widthBlockSize;
+    packingPolicy = params->widthPackingPolicy;
+
+    DPRINTF(WidthDecoder, "\tWidth definition: %d.\n", (int) widthDef);
+    DPRINTF(WidthDecoder, "\tBlock size: %d.\n", (int) blockSize);
+    DPRINTF(WidthDecoder, "\tPacking policy: %d.\n", (int) packingPolicy);
+    /// MPINHO 08-may-2019 END ///
 }
 
 // template <class Impl>
