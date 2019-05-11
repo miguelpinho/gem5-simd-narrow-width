@@ -19,12 +19,21 @@ WidthDecoder<Impl>::WidthDecoder()
 {
 }
 
-// template <class Impl>
-// WidthDecoder<Impl>::WidthDecoder(DerivO3CPUParams *params)
-//     : _name(params->name() + ".widthdecoder")
-// {
-//     // DPRINTF(Widthdecoder, "Creating WidthDecoder object.\n");
-// }
+/// MPINHO 11-may-2019 BEGIN ///
+template <class Impl>
+WidthDecoder<Impl>::WidthDecoder(DerivO3CPUParams *params)
+    : _name(params->name + ".widthdecoder"),
+      widthDef(params->widthDefinition),
+      blockSize(params->widthBlockSize),
+      packingPolicy(params->widthPackingPolicy)
+{
+    DPRINTF(WidthDecoder, "Creating WidthDecoder object.\n");
+
+    DPRINTF(WidthDecoder, "\tWidth definition: %d.\n", (int) widthDef);
+    DPRINTF(WidthDecoder, "\tBlock size: %d.\n", (int) blockSize);
+    DPRINTF(WidthDecoder, "\tPacking policy: %d.\n", (int) packingPolicy);
+}
+/// MPINHO 11-may-2019 END ///
 
 template <class Impl>
 void
@@ -75,6 +84,8 @@ WidthDecoder<Impl>::vecInstWidthMask(DynInstPtr &inst)
 
     if (inst->opClass() == Enums::SimdMult ||
         inst->opClass() == Enums::SimdMultAcc) {
+        // Operation type 1: integer simd multiplication
+
         // multiplicand source registers
         int srcVn = 2, srcVm = 3;
 

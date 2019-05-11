@@ -57,7 +57,7 @@ class WidthDecoder
     WidthDecoder();
 
     /** Constructs a width decoder with given parameters. */
-    // WidthDecoder(DerivO3CPUParams *params);
+    WidthDecoder(DerivO3CPUParams *params);
 
     /** Destructs the width decoder. */
     ~WidthDecoder();
