@@ -23,11 +23,14 @@ WidthDecoder<Impl>::WidthDecoder()
 template <class Impl>
 WidthDecoder<Impl>::WidthDecoder(DerivO3CPUParams *params)
     : _name(params->name + ".widthdecoder"),
+      iqPtr(NULL),
       widthDef(params->widthDefinition),
       blockSize(params->widthBlockSize),
       packingPolicy(params->widthPackingPolicy)
 {
     DPRINTF(WidthDecoder, "Creating WidthDecoder object.\n");
+
+    initPackingClass();
 
     DPRINTF(WidthDecoder, "\tWidth definition: %d.\n", (int) widthDef);
     DPRINTF(WidthDecoder, "\tBlock size: %d.\n", (int) blockSize);
@@ -58,6 +61,7 @@ WidthDecoder<Impl>::init(DerivO3CPUParams *params)
     widthDef = params->widthDefinition;
     blockSize = params->widthBlockSize;
     packingPolicy = params->widthPackingPolicy;
+    initPackingClass();
 
     DPRINTF(WidthDecoder, "\tWidth definition: %d.\n", (int) widthDef);
     DPRINTF(WidthDecoder, "\tBlock size: %d.\n", (int) blockSize);
@@ -105,94 +109,6 @@ WidthDecoder<Impl>::vecInstWidthMask(DynInstPtr &inst)
 
     return mask;
 }
-
-// /**
-//  * @todo Change to use resol granularity.
-//  */
-// template <class Impl>
-// VecWidthCode
-// WidthDecoder<Impl>::vecValWidthMask(const VecRegContainer &val,
-//                                     unsigned eSize,
-//                                     unsigned nElem)
-// {
-//     // uses the architecture vec width for the mask size
-//     VecWidthCode mask;
-
-//     // TODO: check if eSize and nElem match architecture
-
-//     if (eSize == 0) {
-//         // 16x8-bit
-//         // Specific for ARMv8 NEON
-//         mask = VecWidthCode(16, 8);
-
-//         const VecRegT<int8_t, 16, true> &vsrc8 = val;
-
-//         for (size_t i = 0; i < nElem; i++) {
-//             int rsl = signedIntResolution((int64_t) vsrc8[i]);
-
-//             DPRINTF(WidthDecoder, "    Vec Lane %i: val=%d, rsl=%d\n",
-//                     i, vsrc8[i], rsl);
-
-//             mask.set(i, rsl);
-//         }
-//     } else if (eSize == 1) {
-//         // 8x16-bit
-//         // Specific for ARMv8 NEON
-//         mask = VecWidthCode(8, 16);
-
-//         const VecRegT<int16_t, 8, true> &vsrc16 = val;
-
-//         for (size_t i = 0; i < nElem; i++) {
-//             int rsl = signedIntResolution((int64_t) vsrc16[i]);
-
-//             DPRINTF(WidthDecoder, "    Vec Lane %i: val=%d, rsl=%d\n",
-//                     i, vsrc16[i], rsl);
-
-//             mask.set(i, rsl);
-//         }
-//     } else if (eSize == 2) {
-//         // 4x32-bit
-//         // Specific for ARMv8 NEON
-//         mask = VecWidthCode(4, 32);
-
-//         const VecRegT<int32_t, 4, true> &vsrc32 = val;
-
-//         for (size_t i = 0; i < nElem; i++)
-//         {
-//             int rsl = signedIntResolution((int64_t) vsrc32[i]);
-
-//             DPRINTF(WidthDecoder, "    Vec Lane %i: val=%d, rsl=%d\n",
-//                     i, vsrc32[i], rsl);
-
-//             mask.set(i, rsl);
-//         }
-//     } else if (eSize == 3) {
-//         // 2x64-bit
-//         // Specific for ARMv8 NEON
-//         mask = VecWidthCode(2, 64);
-
-//         const VecRegT<int64_t, 2, true> &vsrc64 = val;
-
-//         for (size_t i = 0; i < nElem; i++)
-//         {
-//             int rsl = signedIntResolution(vsrc64[i]);
-
-//             DPRINTF(WidthDecoder, "    Vec Lane %i: val=%d, rsl=%d\n",
-//                     i, vsrc64[i], rsl);
-
-//             mask.set(i, rsl);
-//         }
-//     } else {
-//         panic("Unknown eSize %d.", eSize);
-//     }
-
-//     DPRINTF(WidthDecoder, "Source operand %d mask is %s (eSize=%i).\n",
-//             src,
-//             mask.to_string(),
-//             eSize);
-
-//     return mask;
-// }
 
 /**
  * @todo Change to use resol granularity.
@@ -327,6 +243,30 @@ template <class Impl>
 void
 WidthDecoder<Impl>::regStats()
 {}
+
+template <class Impl>
+void
+WidthDecoder<Impl>::initPackingClass()
+{
+    packingClassMap.fill(PackingClass::NoPacking);
+
+    // SimdAlu generic classes
+    packingClassMap[Enums::SimdAlu] = PackingClass::PackingSimdAlu;
+    packingClassMap[Enums::SimdCmp] = PackingClass::PackingSimdAlu;
+    packingClassMap[Enums::SimdCvt] = PackingClass::PackingSimdAlu;
+    packingClassMap[Enums::SimdMisc] = PackingClass::PackingSimdAlu;
+    packingClassMap[Enums::SimdShift] = PackingClass::PackingSimdAlu;
+    packingClassMap[Enums::SimdShiftAcc] = PackingClass::PackingSimdAlu;
+
+    // SimdAdd classes
+    packingClassMap[Enums::SimdAdd] = PackingClass::PackingSimdAdd;
+    packingClassMap[Enums::SimdAddAcc] = PackingClass::PackingSimdAdd;
+
+    // SimdMult classes
+    packingClassMap[Enums::SimdMult] = PackingClass::PackingSimdMult;
+    packingClassMap[Enums::SimdMultAcc] = PackingClass::PackingSimdMult;
+}
+
 
 #endif // __CPU_O3_WIDTH_DECODER_IMPL_HH__
 /// MPINHO 12-mar-2019 END ///

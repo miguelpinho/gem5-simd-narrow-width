@@ -66,6 +66,12 @@ class WidthPackingPolicy(ScopedEnum):
     vals = [ 'Disabled', 'Simple', 'Optimal', 'MultiElement' ]
 ### MPINHO 07-may-2019 END ###
 
+### MPINHO 13-may-2019 BEGIN ###
+class PackingClass(ScopedEnum):
+    vals = [ 'NoPacking', 'PackingSimdAlu', 'PackingSimdAdd',
+             'PackingSimdMult' ]
+### MPINHO 13-may-2019 END ###
+
 class DerivO3CPU(BaseCPU):
     type = 'DerivO3CPU'
     cxx_header = 'cpu/o3/deriv.hh'

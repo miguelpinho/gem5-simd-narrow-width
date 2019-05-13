@@ -3,6 +3,7 @@
 #define __CPU_O3_WIDTH_DECODER_HH__
 
 #include <algorithm>
+#include <array>
 #include <iostream>
 #include <utility>
 #include <vector>
@@ -12,6 +13,7 @@
 #include "cpu/o3/width_code.hh"
 #include "cpu/op_class.hh"
 #include "debug/WidthDecoder.hh"
+#include "enums/PackingClass.hh"
 #include "enums/WidthDefinition.hh"
 #include "enums/WidthPackingPolicy.hh"
 
@@ -30,9 +32,6 @@ class InstructionQueue;
 template <class Impl>
 class WidthDecoder
 {
-  protected:
-    std::string _name;
-
   public:
     // Typedefs from the Impl.
     // typedef typename Impl::O3CPU O3CPU;
@@ -43,15 +42,8 @@ class WidthDecoder
     // using VecElem = TheISA::VecElem;
     // static constexpr auto NumVecElemPerVecReg = TheISA::NumVecElemPerVecReg;
 
-    // Number of bits per resolution flag.
-    // TODO: change to be defined as parameter?
-    static const size_t ResolGranularity = 3; // 8-bit granularity
-
     // TODO: Specific for ARMv8. Generalize for other architectures.
     static const size_t SizeVecRegister = 128;
-
-    // Number of bits of the resolution masks
-    static constexpr size_t NumVecResolBits = (128) >> ResolGranularity;
 
     /** Empty constructor. */
     WidthDecoder();
@@ -88,6 +80,12 @@ class WidthDecoder
     /** Returns true if vector instruction is of type that can be fused. */
     bool isFuseVecType(DynInstPtr &inst);
 
+  protected:
+    std::string _name;
+
+    /** Pointer to the Instruction Queue. */
+    InstructionQueue<Impl> *iqPtr;
+
     /// MPINHO 08-may-2019 BEGIN ///
     ///////////////////
     // Parameters
@@ -103,10 +101,13 @@ class WidthDecoder
     WidthPackingPolicy packingPolicy;
     /// MPINHO 08-may-2019 END ///
 
+    /// MPINHO 13-may-2019 BEGIN ///
+    /** Packing class of each operation. */
+    std::array<PackingClass, Enums::Num_OpClass> packingClassMap;
+    /// MPINHO 13-may-2019 END ///
 
-  private:
-    /** Pointer to the Instruction Queue. */
-    InstructionQueue<Impl> *iqPtr;
+    /** Create packing class map */
+    void initPackingClass();
 
 };
 
