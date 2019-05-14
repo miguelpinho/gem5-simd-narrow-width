@@ -90,7 +90,6 @@ class WidthDecoder
     ///////////////////
     // Parameters
     ///////////////////
-
     /** Definition for operand and operation width/resolution. */
     WidthDefinition widthDef;
 
@@ -104,11 +103,17 @@ class WidthDecoder
     /// MPINHO 13-may-2019 BEGIN ///
     /** Packing class of each operation. */
     std::array<PackingClass, Enums::Num_OpClass> packingClassMap;
-    /// MPINHO 13-may-2019 END ///
 
     /** Create packing class map */
     void initPackingClass();
 
+    /////////////////////////
+    // Packing Criteria
+    /////////////////////////
+    /** Optimal packing criteria. */
+    bool optimalPacking(VecWidthCode mask1, VecWidthCode mask2);
+
+    /// MPINHO 13-may-2019 END ///
 };
 
 #endif // __CPU_O3_WIDTH_DECODER_BOARD_HH__

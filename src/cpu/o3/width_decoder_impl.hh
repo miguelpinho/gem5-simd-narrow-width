@@ -63,18 +63,13 @@ WidthDecoder<Impl>::init(DerivO3CPUParams *params)
     packingPolicy = params->widthPackingPolicy;
     initPackingClass();
 
-    DPRINTF(WidthDecoder, "\tWidth definition: %d.\n", (int) widthDef);
-    DPRINTF(WidthDecoder, "\tBlock size: %d.\n", (int) blockSize);
-    DPRINTF(WidthDecoder, "\tPacking policy: %d.\n", (int) packingPolicy);
+    DPRINTF(WidthDecoder, "\tWidth definition: %s.\n",
+            PackingClassStrings[static_cast<int>(widthDef)]);
+    DPRINTF(WidthDecoder, "\tBlock size: %u (bits)).\n", blockSize);
+    DPRINTF(WidthDecoder, "\tPacking policy: %s.\n",
+            WidthPackingPolicyStrings[static_cast<int>(packingPolicy)]);
     /// MPINHO 08-may-2019 END ///
 }
-
-// template <class Impl>
-// double
-// WidthDecoder<Impl>::vecValWidthUsage(const VecRegContainer &)
-// {
-
-// }
 
 template <class Impl>
 VecWidthCode
@@ -86,11 +81,15 @@ WidthDecoder<Impl>::vecInstWidthMask(DynInstPtr &inst)
     // uses the architecture vec width for the mask size
     VecWidthCode mask;
 
-    if (inst->opClass() == Enums::SimdMult ||
-        inst->opClass() == Enums::SimdMultAcc) {
-        // Operation type 1: integer simd multiplication
+    PackingClass pkClass = packingClassMap[inst->opClass()];
+    // TODO: revise this for special instructions, like immediate and
+    // instructions with different element size.
+    if (pkClass == PackingClass::PackingSimdMult) {
+        // Integer simd multiplication.
+        // FIXME: check if this is corect for all multiplication
+        // instructions.
 
-        // multiplicand source registers
+        // Multiplicand source registers
         int srcVn = 2, srcVm = 3;
 
         VecWidthCode maskVn =
@@ -101,6 +100,45 @@ WidthDecoder<Impl>::vecInstWidthMask(DynInstPtr &inst)
         // default: operation width is the max of operands
         // TODO: should mult width be that of the operands?
         mask = maskVn|maskVm;
+    } else if (pkClass == PackingClass::PackingSimdAdd) {
+        // Integer simd addition.
+
+        // Addend source registers.
+        int srcVn = 2, srcVm = 3;
+
+        VecWidthCode maskVn =
+            vecSrcRegWidthMask(inst, srcVn, eSize, nElem);
+        VecWidthCode maskVm =
+            vecSrcRegWidthMask(inst, srcVm, eSize, nElem);
+
+        // default: operation width is the max of operands
+        // TODO: should mult width be that of the operands?
+        mask = maskVn|maskVm;
+    } else if (pkClass == PackingClass::PackingSimdAlu) {
+        // Other integer integer simd.
+
+        // Depends on operation class.
+        switch (inst->opClass()) {
+            case Enums::SimdAlu:
+            case Enums::SimdCmp:
+            case Enums::SimdMisc:
+                break;
+
+            case Enums::SimdCvt:
+                break;
+
+            case Enums::SimdShift:
+            case Enums::SimdShiftAcc:
+                break;
+
+            default:
+                panic("Invalid OpClass (%s) for PackingSimdAlu class.",
+                      Enums::OpClassStrings[inst->opClass()]);
+        }
+    } else {
+        // This instruction does not support packing.
+        panic("This operation class (%s) does not support packing.",
+              Enums::OpClassStrings[inst->opClass()]);
     }
 
     DPRINTF(WidthDecoder, "Vector inst code is %s (eSize=%i).\n",
@@ -209,22 +247,27 @@ WidthDecoder<Impl>::canFuseVecInst(DynInstPtr &inst1, DynInstPtr &inst2)
         panic("Trying to fuse non-vector operations.");
     }
 
-    // Can only pack instructions of certain type combinations
-    // For now only pack SimdMult/SimdMultAcc
-    if (!isFuseVecType(inst1) || !isFuseVecType(inst2)) {
+    // Can only pack instructions of certain type combinations.
+    if (packingClassMap[inst1->opClass()] == PackingClass::NoPacking ||
+        packingClassMap[inst2->opClass()] == PackingClass::NoPacking) {
+        // One of the instructions is not of a packing type.
+        return false;
+    } else if (packingClassMap[inst1->opClass()] !=
+               packingClassMap[inst2->opClass()]) {
+        // The instructions' packing class does not match.
         return false;
     }
 
     VecWidthCode mask1 = vecInstWidthMask(inst1);
     VecWidthCode mask2 = vecInstWidthMask(inst2);
 
-    DPRINTF(WidthDecoder, "Trying to fuse %s and %s.\n",
+    DPRINTF(WidthDecoder, "Trying to fuse %s (%s) and %s (%s).\n",
             mask1.to_string(),
-            mask2.to_string());
+            Enums::OpClassStrings[inst1->opClass()],
+            mask2.to_string(),
+            Enums::OpClassStrings[inst2->opClass()]);
 
-    // Optimal: count number of set bits in mask.
-    // Try to pack as much as possible, even if unfeasible.
-    return (mask1.count() + mask2.count()) <= SizeVecRegister;
+    return optimalPacking(mask1, mask2);
 }
 
 template <class Impl>
@@ -235,8 +278,7 @@ WidthDecoder<Impl>::isFuseVecType(DynInstPtr &inst)
         return false;
     }
 
-    return (inst->opClass() == Enums::SimdMult ||
-            inst->opClass() == Enums::SimdMultAcc);
+    return packingClassMap[inst->opClass()] != PackingClass::NoPacking;
 }
 
 template <class Impl>
@@ -267,6 +309,14 @@ WidthDecoder<Impl>::initPackingClass()
     packingClassMap[Enums::SimdMultAcc] = PackingClass::PackingSimdMult;
 }
 
+template <class Impl>
+bool
+WidthDecoder<Impl>::optimalPacking(VecWidthCode mask1,
+                                   VecWidthCode mask2) {
+    // Optimal: count number of set bits in mask.
+    // Try to pack as much as possible, even if unfeasible.
+    return (mask1.count() + mask2.count()) <= SizeVecRegister;
+}
 
 #endif // __CPU_O3_WIDTH_DECODER_IMPL_HH__
 /// MPINHO 12-mar-2019 END ///
