@@ -30,7 +30,41 @@ WidthDecoder<Impl>::WidthDecoder(DerivO3CPUParams *params)
 {
     DPRINTF(WidthDecoder, "Creating WidthDecoder object.\n");
 
+    /** Parameters */
+    widthDef = params->widthDefinition;
+    blockSize = params->widthBlockSize;
+    packingPolicy = params->widthPackingPolicy;
+
+    // blockSize must be a power of 2.
+    if (!(block && ((block & (block-1)) == 0)) {
+        fatal("Block size (%u) must be a power of 2.",
+              blockSize);
+    }
+
+    // Set width definition function.
+    switch (widthDef) {
+    case WidthDefinition::Unsigned :
+        prcFunc = unsignedIntResolution;
+        break;
+
+    case WidthDefinition::Signed :
+        prcFunc = signedIntResolution;
+        break;
+
+    default:
+        panic("\"%s\" unimplemented width definition.",
+              WidthPackingPolicy[widthDef]);
+        break;
+    }
+
+    // Set width rounding function based on the block size.
+    roundFunc = roundPrcBlock;
+    roundedPrcFunc =
+        std::bind(roundFunc, std::bind(prcFunc, std::placeholders::_1),
+                  blockSize);
+
     initPackingClass();
+    // Set packing policy function.
     switch (packingPolicy) {
         case WidthPackingPolicy::Disabled :
             packingCriteria =
@@ -83,7 +117,30 @@ WidthDecoder<Impl>::init(DerivO3CPUParams *params)
     blockSize = params->widthBlockSize;
     packingPolicy = params->widthPackingPolicy;
 
+    // Set width definition function.
+    switch (widthDef) {
+    case WidthDefinition::Unsigned :
+        prcFunc = unsignedIntResolution;
+        break;
+
+    case WidthDefinition::Signed :
+        prcFunc = signedIntResolution;
+        break;
+
+    default:
+        panic("\"%s\" unimplemented width definition.",
+              WidthPackingPolicy[widthDef]);
+        break;
+    }
+
+    // Set width rounding function based on the block size.
+    roundFunc = roundPrcBlock;
+    roundedPrcFunc =
+        std::bind(roundFunc, std::bind(prcFunc, std::placeholders::_1),
+                  blockSize);
+
     initPackingClass();
+    // Set packing policy function.
     switch (packingPolicy) {
         case WidthPackingPolicy::Disabled :
             packingCriteria =
@@ -205,14 +262,14 @@ WidthDecoder<Impl>::vecSrcRegWidthMask(DynInstPtr &inst, int src,
         // Specific for ARMv8 NEON
         mask = VecWidthCode(16, 8);
 
-        const VecRegT<int8_t, 16, true> &vsrc8 =
+        const VecRegT<uint8_t, 16, true> &vsrc8 =
             inst->readVecRegOperand(inst->staticInst.get(), src);
 
         for (size_t i = 0; i < nElem; i++) {
-            int rsl = signedIntResolution((int64_t) vsrc8[i]);
+            int rsl = roundedPrcFunc((uint64_t) vsrc8[i]);
 
             DPRINTF(WidthDecoder, "    Vec Lane %i: val=%d, rsl=%d\n",
-                    i, vsrc8[i], rsl);
+                    i, (int8_t) vsrc8[i], rsl);
 
             mask.set(i, rsl);
         }
@@ -221,14 +278,14 @@ WidthDecoder<Impl>::vecSrcRegWidthMask(DynInstPtr &inst, int src,
         // Specific for ARMv8 NEON
         mask = VecWidthCode(8, 16);
 
-        const VecRegT<int16_t, 8, true> &vsrc16 =
+        const VecRegT<uint16_t, 8, true> &vsrc16 =
             inst->readVecRegOperand(inst->staticInst.get(), src);
 
         for (size_t i = 0; i < nElem; i++) {
-            int rsl = signedIntResolution((int64_t) vsrc16[i]);
+            int rsl = roundedPrcFunc((uint64_t) vsrc16[i]);
 
             DPRINTF(WidthDecoder, "    Vec Lane %i: val=%d, rsl=%d\n",
-                    i, vsrc16[i], rsl);
+                    i, (int16_t) vsrc16[i], rsl);
 
             mask.set(i, rsl);
         }
@@ -237,15 +294,15 @@ WidthDecoder<Impl>::vecSrcRegWidthMask(DynInstPtr &inst, int src,
         // Specific for ARMv8 NEON
         mask = VecWidthCode(4, 32);
 
-        const VecRegT<int32_t, 4, true> &vsrc32 =
+        const VecRegT<uint32_t, 4, true> &vsrc32 =
             inst->readVecRegOperand(inst->staticInst.get(), src);
 
         for (size_t i = 0; i < nElem; i++)
         {
-            int rsl = signedIntResolution((int64_t) vsrc32[i]);
+            int rsl = roundedPrcFunc((uint64_t) vsrc32[i]);
 
             DPRINTF(WidthDecoder, "    Vec Lane %i: val=%d, rsl=%d\n",
-                    i, vsrc32[i], rsl);
+                    i, (int32_t) vsrc32[i], rsl);
 
             mask.set(i, rsl);
         }
@@ -254,15 +311,15 @@ WidthDecoder<Impl>::vecSrcRegWidthMask(DynInstPtr &inst, int src,
         // Specific for ARMv8 NEON
         mask = VecWidthCode(2, 64);
 
-        const VecRegT<int64_t, 2, true> &vsrc64 =
+        const VecRegT<uint64_t, 2, true> &vsrc64 =
             inst->readVecRegOperand(inst->staticInst.get(), src);
 
         for (size_t i = 0; i < nElem; i++)
         {
-            int rsl = signedIntResolution(vsrc64[i]);
+            int rsl = roundedPrcFunc(vsrc64[i]);
 
             DPRINTF(WidthDecoder, "    Vec Lane %i: val=%d, rsl=%d\n",
-                    i, vsrc64[i], rsl);
+                    i, (int64_t) vsrc64[i], rsl);
 
             mask.set(i, rsl);
         }

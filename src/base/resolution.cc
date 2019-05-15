@@ -1,6 +1,7 @@
 /// MPINHO 2-mar-2019 BEGIN ///
 
 #include "base/resolution.hh"
+#include "arch/utility.hh"
 
 int
 unsignedIntResolution(uint64_t val)
@@ -42,24 +43,21 @@ signedIntResolution(uint64_t val)
     return prc;
 }
 
+/// MPINHO 15-may-2019 BEGIN ///
 int
-blockSIntResolution(uint64_t val, uint8_t block)
+roundPrcBlock(int prc, int block)
 {
-    int prc = signedIntResolution(val);
+    assert(prc >= 0 && block >= 0);
 
-    return (prc + block - 1) / block;
+    // Source: https://stackoverflow.com/questions/3407012/
+    // Make sure block is a power of 2.
+    assert(block && ((block & (block-1)) == 0));
+
+    return (prc + block - 1) & -block;
 }
 
-int
-logSIntResolution(uint64_t val, uint8_t block)
-{
-    int aux = blockSIntResolution(val, block);
+// TODO: implement roundPrcBlockLog function
 
-    int log = 0;
-
-    while (aux > (1 << log)) log++;
-
-    return log + 1;
-}
+/// MPINHO 15-may-2019 END ///
 
 /// MPINHO 2-mar-2019 END ///

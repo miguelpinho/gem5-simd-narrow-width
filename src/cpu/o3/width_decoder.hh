@@ -93,14 +93,16 @@ class WidthDecoder
     ///////////////////
     /** Definition for operand and operation width/resolution. */
     WidthDefinition widthDef;
+    std::function<int(uint64_t)> prcFunc;
 
     /** Block size for width/resolution considerations. */
     unsigned blockSize;
+    std::function<int(int, int)> roundFunc;
+    std::function<int(uint64_t)> roundedPrcFunc;
 
     /** Policy for packing operations. */
     WidthPackingPolicy packingPolicy;
     /// MPINHO 08-may-2019 END ///
-
     /// MPINHO 13-may-2019 BEGIN ///
     /** Packing class of each operation. */
     std::array<PackingClass, Enums::Num_OpClass> packingClassMap;
@@ -112,7 +114,7 @@ class WidthDecoder
     // Packing Criteria
     /////////////////////////
     /** Chosen packing condition. */
-    std::function<bool(VecWidthCode, VecWidthCode) packingCriteria;
+    std::function<bool(VecWidthCode, VecWidthCode)> packingCriteria;
     /** Optimal packing criteria. */
     bool simplePacking(VecWidthCode mask1, VecWidthCode mask2);
     bool optimalPacking(VecWidthCode mask1, VecWidthCode mask2);

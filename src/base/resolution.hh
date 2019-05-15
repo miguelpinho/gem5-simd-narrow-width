@@ -32,30 +32,25 @@ int unsignedIntResolution(uint64_t val);
 int signedIntResolution(uint64_t val);
 
 /**
- * Returns the bit blocks needed to represent an integer value.  For a given
- * block size, calculates the minimal block count that keeps the resolution,
- * according to the signed int resolution definition in
- * @ref signedIntResolution.
+ * Rounds up the precision value to the nearest multiple of a given block size.
  *
- * @param val 64-bit integer value
- * @param block size of the blocks in bits
+ * @param prc precision value
+ * @param block size of the blocks in bit, which must be a power of two
  *
- * @return count of needed blocks
+ * @return smallest multiple of block where the precision val fits
  */
-int blockSIntResolution(uint64_t val, uint8_t block);
+int roundPrcBlock(int prc, int block);
 
 /**
- * Returns the base 2 log of the blocks needed for an integer value.  For a
- * given a block size, calculates the power of two that is enough to represent
- * that value keeping the resolution according to the signed int resolution
- * definition in @ref signedIntResolution.
+ * Rounds up the precision value to the nearest power of two starting in the
+ * block size.
  *
- * @param val 64-bit integer value
- * @param block size of the blocks in bits
+ * @param prc precision value
+ * @param block size of the blocks in bit, which must be a power of two
  *
- * @return smallest power of two of blocks needed
+ * @return smallest power of two of block where the precision val fits
  */
-int logSIntResolution(uint64_t val, uint8_t block);
+int roundPrcBlockLog(int prc, int block);
 
 #endif // __BASE_RESOLUTION_HH__
 /// MPINHO 2-mar-2019 END ///
