@@ -31,10 +31,31 @@ WidthDecoder<Impl>::WidthDecoder(DerivO3CPUParams *params)
     DPRINTF(WidthDecoder, "Creating WidthDecoder object.\n");
 
     initPackingClass();
+    switch (packingPolicy) {
+        case WidthPackingPolicy::Disabled :
+            packingCriteria =
+                [] (VecWidthCode a, VecWidthCode b) { return false; };
+            break;
 
-    DPRINTF(WidthDecoder, "\tWidth definition: %d.\n", (int) widthDef);
-    DPRINTF(WidthDecoder, "\tBlock size: %d.\n", (int) blockSize);
-    DPRINTF(WidthDecoder, "\tPacking policy: %d.\n", (int) packingPolicy);
+        case WidthPackingPolicy::Simple :
+            packingCriteria = simplePacking;
+            break;
+
+        case WidthPackingPolicy::Optimal :
+            packingCriteria = optimalPacking;
+            break;
+
+        default:
+            panic("\"%s\" packing criteria is not implemented.",
+                  WidthPackingPolicyStrings[packingPolicy]);
+            break;
+    }
+
+    DPRINTF(WidthDecoder, "\tWidth definition: %s.\n",
+            PackingClassStrings[static_cast<int>(widthDef)]);
+    DPRINTF(WidthDecoder, "\tBlock size: %u (bits)).\n", blockSize);
+    DPRINTF(WidthDecoder, "\tPacking policy: %s.\n",
+            WidthPackingPolicyStrings[static_cast<int>(packingPolicy)]);
 }
 /// MPINHO 11-may-2019 END ///
 
@@ -61,7 +82,27 @@ WidthDecoder<Impl>::init(DerivO3CPUParams *params)
     widthDef = params->widthDefinition;
     blockSize = params->widthBlockSize;
     packingPolicy = params->widthPackingPolicy;
+
     initPackingClass();
+    switch (packingPolicy) {
+        case WidthPackingPolicy::Disabled :
+            packingCriteria =
+                [] (VecWidthCode a, VecWidthCode b) { return false; };
+            break;
+
+        case WidthPackingPolicy::Simple :
+            packingCriteria = simplePacking;
+            break;
+
+        case WidthPackingPolicy::Optimal :
+            packingCriteria = optimalPacking;
+            break;
+
+        default:
+            panic("\"%s\" packing criteria is not implemented.",
+                  WidthPackingPolicyStrings[packingPolicy]);
+            break;
+    }
 
     DPRINTF(WidthDecoder, "\tWidth definition: %s.\n",
             PackingClassStrings[static_cast<int>(widthDef)]);
@@ -305,6 +346,30 @@ WidthDecoder<Impl>::initPackingClass()
     // SimdMult classes
     packingClassMap[Enums::SimdMult] = PackingClass::PackingSimdMult;
     packingClassMap[Enums::SimdMultAcc] = PackingClass::PackingSimdMult;
+}
+
+template <class Impl>
+bool
+WidthDecoder<Impl>::simplePacking(VecWidthCode mask1,
+                                   VecWidthCode mask2) {
+    // Simple: each lane must have enough space seperately.
+
+    // If the width of the instructions does not match, packing fails.
+    if (mask1.eBits != mask2.eBits)
+        return false;
+
+    // Evaluate lane by lane. If any lane has width overflow, packing fails.
+    int eBits = mask1.eBits;
+    // Prepared for the case where an instruction uses only a portion of the
+    // lane. This happens in ARM Neon for example.
+    int nElem = std::min(mask1.nElem, mask2.nElem);
+    for (int i = 0; i++; i < nElem) {
+        if (mask1.get(i) + mask2.get(i) > eBits) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 template <class Impl>
