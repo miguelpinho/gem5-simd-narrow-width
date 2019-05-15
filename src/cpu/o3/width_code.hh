@@ -33,19 +33,29 @@ class VecWidthCode
             code = std::vector<int>(nElem);
         }
 
+        VecWidthCode(int _nElem, int _eBits, int val)
+            : eBits(_eBits),
+              nElem(_nElem)
+        {
+            assert(val >= 0 && val <= eBits);
+
+            code = std::vector<int>(nElem);
+            std::fill(code.begin(), code.end(), val);
+        }
+
         ~VecWidthCode() {}
 
         void
         set(int pos, int val) {
-            assert(pos < nElem);
-            assert(val <= eBits);
+            assert(pos >= 0 && pos < nElem);
+            assert(val >= 0 && val <= eBits);
 
             code[pos] = val;
         }
 
         int
         get(int pos) {
-            assert(pos < nElem);
+            assert(pos >= 0 && pos < nElem);
 
             return (code[pos]);
         }

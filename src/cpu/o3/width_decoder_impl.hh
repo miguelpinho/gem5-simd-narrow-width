@@ -122,13 +122,11 @@ WidthDecoder<Impl>::vecInstWidthMask(DynInstPtr &inst)
             case Enums::SimdAlu:
             case Enums::SimdCmp:
             case Enums::SimdMisc:
-                break;
-
             case Enums::SimdCvt:
-                break;
-
             case Enums::SimdShift:
             case Enums::SimdShiftAcc:
+                // For now this operation type is full.
+                mask = VecWidthCode(nElem, eSize, eSize);
                 break;
 
             default:
