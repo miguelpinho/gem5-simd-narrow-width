@@ -18,32 +18,25 @@
 class VecWidthCode
 {
     private:
+        static constexpr auto VecRegSizeBits =
+            TheISA::VecRegSizeBytes * 4;
+
         int eBits;
         int nElem;
         std::vector<int> code;
 
     public:
-        VecWidthCode()
-        {}
+        VecWidthCode();
 
-        VecWidthCode(int _nElem, int _eBits)
-            : eBits(_eBits),
-              nElem(_nElem)
-        {
-            code = std::vector<int>(nElem);
-        }
+        VecWidthCode(int _nElem, int _eBits);
 
-        VecWidthCode(int _nElem, int _eBits, int val)
-            : eBits(_eBits),
-              nElem(_nElem)
-        {
-            assert(val >= 0 && val <= eBits);
-
-            code = std::vector<int>(nElem);
-            std::fill(code.begin(), code.end(), val);
-        }
+        VecWidthCode(int _nElem, int _eBits, int val);
 
         ~VecWidthCode() {}
+
+        static int vectorSize() { return VecRegSizeBits; }
+        int elemBits() { return eBits; }
+        int numElem() { return nElem; }
 
         void
         set(int pos, int val) {

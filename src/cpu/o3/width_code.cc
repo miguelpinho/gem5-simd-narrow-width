@@ -1,6 +1,27 @@
 /// MPINHO 24-mar-2019 BEGIN ///
 
 #include "cpu/o3/width_code.hh"
+#include "config/the_isa.hh"
+
+VecWidthCode::VecWidthCode()
+{}
+
+VecWidthCode::VecWidthCode(int _nElem, int _eBits)
+    : eBits(_eBits),
+      nElem(_nElem)
+{
+    assert(_nElem * _eBits <= VecRegSizeBits);
+
+    code = std::vector<int>(nElem);
+}
+
+VecWidthCode::VecWidthCode(int _nElem, int _eBits, int val)
+    : VecWidthCode(_nElem, _eBits)
+{
+    assert(val >= 0 && val <= eBits);
+
+    std::fill(code.begin(), code.end(), val);
+}
 
 int
 VecWidthCode::count()

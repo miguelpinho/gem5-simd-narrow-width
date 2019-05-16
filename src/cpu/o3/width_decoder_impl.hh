@@ -3,11 +3,13 @@
 #define __CPU_O3_WIDTH_DECODER_IMPL_HH__
 
 #include "arch/generic/vec_reg.hh"
+#include "arch/utility.hh"
 #include "base/logging.hh"
 #include "base/resolution.hh"
 #include "base/trace.hh"
 #include "cpu/o3/comm.hh"
 #include "cpu/o3/inst_queue.hh"
+#include "cpu/o3/packing_criteria.hh"
 #include "cpu/o3/width_decoder.hh"
 #include "debug/WidthDecoder.hh"
 #include "enums/OpClass.hh"
@@ -36,7 +38,7 @@ WidthDecoder<Impl>::WidthDecoder(DerivO3CPUParams *params)
     packingPolicy = params->widthPackingPolicy;
 
     // blockSize must be a power of 2.
-    if (!(block && ((block & (block-1)) == 0)) {
+    if (!(blockSize && ((blockSize & (blockSize-1)) == 0))) {
         fatal("Block size (%u) must be a power of 2.",
               blockSize);
     }
@@ -53,7 +55,7 @@ WidthDecoder<Impl>::WidthDecoder(DerivO3CPUParams *params)
 
     default:
         panic("\"%s\" unimplemented width definition.",
-              WidthPackingPolicy[widthDef]);
+              WidthPackingPolicyStrings[static_cast<int>(widthDef)]);
         break;
     }
 
@@ -81,7 +83,7 @@ WidthDecoder<Impl>::WidthDecoder(DerivO3CPUParams *params)
 
         default:
             panic("\"%s\" packing criteria is not implemented.",
-                  WidthPackingPolicyStrings[packingPolicy]);
+                  WidthPackingPolicyStrings[static_cast<int>(packingPolicy)]);
             break;
     }
 
@@ -129,7 +131,7 @@ WidthDecoder<Impl>::init(DerivO3CPUParams *params)
 
     default:
         panic("\"%s\" unimplemented width definition.",
-              WidthPackingPolicy[widthDef]);
+              WidthPackingPolicyStrings[static_cast<int>(widthDef)]);
         break;
     }
 
@@ -157,7 +159,7 @@ WidthDecoder<Impl>::init(DerivO3CPUParams *params)
 
         default:
             panic("\"%s\" packing criteria is not implemented.",
-                  WidthPackingPolicyStrings[packingPolicy]);
+                  WidthPackingPolicyStrings[static_cast<int>(packingPolicy)]);
             break;
     }
 
@@ -260,7 +262,7 @@ WidthDecoder<Impl>::vecSrcRegWidthMask(DynInstPtr &inst, int src,
     if (eSize == 0) {
         // 16x8-bit
         // Specific for ARMv8 NEON
-        mask = VecWidthCode(16, 8);
+        mask = VecWidthCode(SizeVecRegister, 16, 8);
 
         const VecRegT<uint8_t, 16, true> &vsrc8 =
             inst->readVecRegOperand(inst->staticInst.get(), src);
@@ -276,7 +278,7 @@ WidthDecoder<Impl>::vecSrcRegWidthMask(DynInstPtr &inst, int src,
     } else if (eSize == 1) {
         // 8x16-bit
         // Specific for ARMv8 NEON
-        mask = VecWidthCode(8, 16);
+        mask = VecWidthCode(SizeVecRegister, 8, 16);
 
         const VecRegT<uint16_t, 8, true> &vsrc16 =
             inst->readVecRegOperand(inst->staticInst.get(), src);
@@ -292,7 +294,7 @@ WidthDecoder<Impl>::vecSrcRegWidthMask(DynInstPtr &inst, int src,
     } else if (eSize == 2) {
         // 4x32-bit
         // Specific for ARMv8 NEON
-        mask = VecWidthCode(4, 32);
+        mask = VecWidthCode(SizeVecRegister, 4, 32);
 
         const VecRegT<uint32_t, 4, true> &vsrc32 =
             inst->readVecRegOperand(inst->staticInst.get(), src);
@@ -309,7 +311,7 @@ WidthDecoder<Impl>::vecSrcRegWidthMask(DynInstPtr &inst, int src,
     } else if (eSize == 3) {
         // 2x64-bit
         // Specific for ARMv8 NEON
-        mask = VecWidthCode(2, 64);
+        mask = VecWidthCode(SizeVecRegister, 2, 64);
 
         const VecRegT<uint64_t, 2, true> &vsrc64 =
             inst->readVecRegOperand(inst->staticInst.get(), src);
@@ -405,38 +407,6 @@ WidthDecoder<Impl>::initPackingClass()
     packingClassMap[Enums::SimdMultAcc] = PackingClass::PackingSimdMult;
 }
 
-template <class Impl>
-bool
-WidthDecoder<Impl>::simplePacking(VecWidthCode mask1,
-                                   VecWidthCode mask2) {
-    // Simple: each lane must have enough space seperately.
-
-    // If the width of the instructions does not match, packing fails.
-    if (mask1.eBits != mask2.eBits)
-        return false;
-
-    // Evaluate lane by lane. If any lane has width overflow, packing fails.
-    int eBits = mask1.eBits;
-    // Prepared for the case where an instruction uses only a portion of the
-    // lane. This happens in ARM Neon for example.
-    int nElem = std::min(mask1.nElem, mask2.nElem);
-    for (int i = 0; i++; i < nElem) {
-        if (mask1.get(i) + mask2.get(i) > eBits) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-template <class Impl>
-bool
-WidthDecoder<Impl>::optimalPacking(VecWidthCode mask1,
-                                   VecWidthCode mask2) {
-    // Optimal: count number of set bits in mask.
-    // Try to pack as much as possible, even if unfeasible.
-    return (mask1.count() + mask2.count()) <= SizeVecRegister;
-}
 
 #endif // __CPU_O3_WIDTH_DECODER_IMPL_HH__
 /// MPINHO 12-mar-2019 END ///

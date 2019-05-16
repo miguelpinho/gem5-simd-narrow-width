@@ -6,7 +6,6 @@
 #include <array>
 #include <functional>
 #include <iostream>
-#include <utility>
 #include <vector>
 
 #include "base/statistics.hh"
@@ -115,9 +114,6 @@ class WidthDecoder
     /////////////////////////
     /** Chosen packing condition. */
     std::function<bool(VecWidthCode, VecWidthCode)> packingCriteria;
-    /** Optimal packing criteria. */
-    bool simplePacking(VecWidthCode mask1, VecWidthCode mask2);
-    bool optimalPacking(VecWidthCode mask1, VecWidthCode mask2);
 
     /// MPINHO 13-may-2019 END ///
 };
