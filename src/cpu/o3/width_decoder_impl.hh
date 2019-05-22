@@ -88,7 +88,7 @@ WidthDecoder<Impl>::WidthDecoder(DerivO3CPUParams *params)
     }
 
     DPRINTF(WidthDecoder, "\tWidth definition: %s.\n",
-            PackingClassStrings[static_cast<int>(widthDef)]);
+            WidthDefinitionStrings[static_cast<int>(widthDef)]);
     DPRINTF(WidthDecoder, "\tBlock size: %u (bits)).\n", blockSize);
     DPRINTF(WidthDecoder, "\tPacking policy: %s.\n",
             WidthPackingPolicyStrings[static_cast<int>(packingPolicy)]);
@@ -131,7 +131,7 @@ WidthDecoder<Impl>::init(DerivO3CPUParams *params)
 
     default:
         panic("\"%s\" unimplemented width definition.",
-              WidthPackingPolicyStrings[static_cast<int>(widthDef)]);
+              WidthDefinitionStrings[static_cast<int>(widthDef)]);
         break;
     }
 
