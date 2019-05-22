@@ -203,17 +203,67 @@ WidthDecoder<Impl>::vecInstWidthMask(DynInstPtr &inst)
     } else if (pkClass == PackingClass::PackingSimdAdd) {
         // Integer simd addition.
 
-        // Addend source registers.
-        int srcVn = 2, srcVm = 3;
+        // Width code depends on the specific instruction.
+        std::string name = inst->staticInst->getName();
+        if (decodeMap.find(name) == decodeMap.end()) {
+            panic("Width decoder does no support inst \"%s\".",
+                  name);
+        }
+        DecodeType type = decodeMap[name];
 
-        VecWidthCode maskVn =
-            vecSrcRegWidthMask(inst, srcVn, eSize, nElem);
-        VecWidthCode maskVm =
-            vecSrcRegWidthMask(inst, srcVm, eSize, nElem);
+        switch (type) {
+            case TWO_OP:
+                // Addend source registers.
 
-        // default: operation width is the max of operands
-        // TODO: should mult width be that of the operands?
-        mask = maskVn|maskVm;
+                {
+                    VecWidthCode maskVn =
+                        vecSrcRegWidthMask(inst, 2, eSize, nElem);
+                    VecWidthCode maskVm =
+                        vecSrcRegWidthMask(inst, 3, eSize, nElem);
+
+                    mask = maskVn|maskVm;
+                }
+                break;
+
+            case ONE_OP:
+                // Single source register.
+
+                {
+                    mask = vecSrcRegWidthMask(inst, 2, eSize, nElem);
+                }
+                break;
+
+            case PAIR_OP:
+                // Instructions has two variants.
+
+                if (inst->numSrcRegs() == 3) {
+                    // Single source register.
+
+                    mask = vecSrcRegWidthMask(inst, 2, eSize, nElem);
+                } else {
+                    // Pair-wise source registers.
+
+                    VecWidthCode maskVn =
+                        vecSrcRegWidthMask(inst, 2, eSize, nElem);
+                    VecWidthCode maskVm =
+                        vecSrcRegWidthMask(inst, 3, eSize, nElem);
+
+                    mask = VecWidthCode(nElem, eSize);
+
+                    // Pair-wise mask generation.
+                    int hElem = nElem >> 1;
+                    for (int i = 0, j = 0; i < hElem ; i++, j+=2) {
+                        mask.set(i, std::max(maskVn.get(j), maskVn.get(j+1)));
+                        mask.set(i+hElem, std::max(maskVm.get(j),
+                                 maskVm.get(j+1)));
+                    }
+                }
+                break;
+
+            default:
+                panic("Should not reach here.");
+        }
+
     } else if (pkClass == PackingClass::PackingSimdAlu) {
         // Other integer integer simd.
 
@@ -262,7 +312,7 @@ WidthDecoder<Impl>::vecSrcRegWidthMask(DynInstPtr &inst, int src,
     if (eSize == 0) {
         // 16x8-bit
         // Specific for ARMv8 NEON
-        mask = VecWidthCode(SizeVecRegister, 16, 8);
+        mask = VecWidthCode(16, 8);
 
         const VecRegT<uint8_t, 16, true> &vsrc8 =
             inst->readVecRegOperand(inst->staticInst.get(), src);
@@ -278,7 +328,7 @@ WidthDecoder<Impl>::vecSrcRegWidthMask(DynInstPtr &inst, int src,
     } else if (eSize == 1) {
         // 8x16-bit
         // Specific for ARMv8 NEON
-        mask = VecWidthCode(SizeVecRegister, 8, 16);
+        mask = VecWidthCode(8, 16);
 
         const VecRegT<uint16_t, 8, true> &vsrc16 =
             inst->readVecRegOperand(inst->staticInst.get(), src);
@@ -294,7 +344,7 @@ WidthDecoder<Impl>::vecSrcRegWidthMask(DynInstPtr &inst, int src,
     } else if (eSize == 2) {
         // 4x32-bit
         // Specific for ARMv8 NEON
-        mask = VecWidthCode(SizeVecRegister, 4, 32);
+        mask = VecWidthCode(4, 32);
 
         const VecRegT<uint32_t, 4, true> &vsrc32 =
             inst->readVecRegOperand(inst->staticInst.get(), src);
@@ -311,7 +361,7 @@ WidthDecoder<Impl>::vecSrcRegWidthMask(DynInstPtr &inst, int src,
     } else if (eSize == 3) {
         // 2x64-bit
         // Specific for ARMv8 NEON
-        mask = VecWidthCode(SizeVecRegister, 2, 64);
+        mask = VecWidthCode(2, 64);
 
         const VecRegT<uint64_t, 2, true> &vsrc64 =
             inst->readVecRegOperand(inst->staticInst.get(), src);
@@ -391,16 +441,16 @@ WidthDecoder<Impl>::initPackingClass()
     packingClassMap.fill(PackingClass::NoPacking);
 
     // SimdAlu generic classes
-    packingClassMap[Enums::SimdAlu] = PackingClass::PackingSimdAlu;
-    packingClassMap[Enums::SimdCmp] = PackingClass::PackingSimdAlu;
-    packingClassMap[Enums::SimdCvt] = PackingClass::PackingSimdAlu;
-    packingClassMap[Enums::SimdMisc] = PackingClass::PackingSimdAlu;
-    packingClassMap[Enums::SimdShift] = PackingClass::PackingSimdAlu;
-    packingClassMap[Enums::SimdShiftAcc] = PackingClass::PackingSimdAlu;
+    // packingClassMap[Enums::SimdAlu] = PackingClass::PackingSimdAlu;
+    // packingClassMap[Enums::SimdCmp] = PackingClass::PackingSimdAlu;
+    // packingClassMap[Enums::SimdCvt] = PackingClass::PackingSimdAlu;
+    // packingClassMap[Enums::SimdMisc] = PackingClass::PackingSimdAlu;
+    // packingClassMap[Enums::SimdShift] = PackingClass::PackingSimdAlu;
+    // packingClassMap[Enums::SimdShiftAcc] = PackingClass::PackingSimdAlu;
 
     // SimdAdd classes
     packingClassMap[Enums::SimdAdd] = PackingClass::PackingSimdAdd;
-    packingClassMap[Enums::SimdAddAcc] = PackingClass::PackingSimdAdd;
+    // packingClassMap[Enums::SimdAddAcc] = PackingClass::PackingSimdAdd;
 
     // SimdMult classes
     packingClassMap[Enums::SimdMult] = PackingClass::PackingSimdMult;

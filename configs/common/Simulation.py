@@ -462,9 +462,10 @@ def run(options, root, testsys, cpu_class):
 
     ### MPINHO 08-may-2019 BEGIN ###
     for i in range(np):
-        testsys.cpu[i].widthDefinition = options.width_define
-        testsys.cpu[i].widthBlockSize = options.width_block
-        testsys.cpu[i].widthPackingPolicy = options.packing_policy
+        if isinstance(testsys.cpu[i], m5.objects.DerivO3CPU):
+            testsys.cpu[i].widthDefinition = options.width_define
+            testsys.cpu[i].widthBlockSize = options.width_block
+            testsys.cpu[i].widthPackingPolicy = options.packing_policy
     ### MPINHO 08-may-2019 END ###
 
     if cpu_class:

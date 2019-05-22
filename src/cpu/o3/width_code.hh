@@ -34,7 +34,7 @@ class VecWidthCode
 
         ~VecWidthCode() {}
 
-        static int vectorSize() { return VecRegSizeBits; }
+        static int vectorSize() { return static_cast<int>(VecRegSizeBits); }
         int elemBits() { return eBits; }
         int numElem() { return nElem; }
 
