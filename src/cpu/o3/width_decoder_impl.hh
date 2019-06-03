@@ -55,7 +55,7 @@ WidthDecoder<Impl>::WidthDecoder(DerivO3CPUParams *params)
 
     default:
         panic("\"%s\" unimplemented width definition.",
-              WidthPackingPolicyStrings[static_cast<int>(widthDef)]);
+              WidthDefinitionStrings[static_cast<int>(widthDef)]);
         break;
     }
 
@@ -164,7 +164,7 @@ WidthDecoder<Impl>::init(DerivO3CPUParams *params)
     }
 
     DPRINTF(WidthDecoder, "\tWidth definition: %s.\n",
-            PackingClassStrings[static_cast<int>(widthDef)]);
+            WidthDefinitionStrings[static_cast<int>(widthDef)]);
     DPRINTF(WidthDecoder, "\tBlock size: %u (bits)).\n", blockSize);
     DPRINTF(WidthDecoder, "\tPacking policy: %s.\n",
             WidthPackingPolicyStrings[static_cast<int>(packingPolicy)]);
@@ -177,6 +177,10 @@ WidthDecoder<Impl>::vecInstWidthMask(DynInstPtr &inst)
 {
     unsigned eSize = inst->staticInst->vecElemSize();
     unsigned nElem = inst->staticInst->vecNumElem();
+
+    if (eSize == 0) {
+        return VecWidthCode(nElem, 8, 8);
+    }
 
     // uses the architecture vec width for the mask size
     VecWidthCode mask;
@@ -248,7 +252,7 @@ WidthDecoder<Impl>::vecInstWidthMask(DynInstPtr &inst)
                     VecWidthCode maskVm =
                         vecSrcRegWidthMask(inst, 3, eSize, nElem);
 
-                    mask = VecWidthCode(nElem, eSize);
+                    mask = VecWidthCode(maskVn.numElem(), maskVn.elemBits());
 
                     // Pair-wise mask generation.
                     int hElem = nElem >> 1;
@@ -264,25 +268,6 @@ WidthDecoder<Impl>::vecInstWidthMask(DynInstPtr &inst)
                 panic("Should not reach here.");
         }
 
-    } else if (pkClass == PackingClass::PackingSimdAlu) {
-        // Other integer integer simd.
-
-        // Depends on operation class.
-        switch (inst->opClass()) {
-            case Enums::SimdAlu:
-            case Enums::SimdCmp:
-            case Enums::SimdMisc:
-            case Enums::SimdCvt:
-            case Enums::SimdShift:
-            case Enums::SimdShiftAcc:
-                // For now this operation type is full.
-                mask = VecWidthCode(nElem, eSize, eSize);
-                break;
-
-            default:
-                panic("Invalid OpClass (%s) for PackingSimdAlu class.",
-                      Enums::OpClassStrings[inst->opClass()]);
-        }
     } else {
         // This instruction does not support packing.
         panic("This operation class (%s) does not support packing.",

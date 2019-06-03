@@ -67,8 +67,13 @@ class WidthDecoder
     /** Sets the pointer to the IQ. */
     void setIQ(InstructionQueue<Impl> *iq_ptr);
 
-    /** Return width maks of a vector instruction. */
+    /** Return width mask of a vector instruction. */
     VecWidthCode vecInstWidthMask(DynInstPtr &inst);
+
+    /** Return width mask of a vector instruction as string. */
+    std::string strVecInstWidthMask(DynInstPtr &inst) {
+      return vecInstWidthMask(inst).to_string();
+    }
 
     /** Return width maks of one of the vector source registers. */
     VecWidthCode

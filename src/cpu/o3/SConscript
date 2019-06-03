@@ -73,7 +73,6 @@ if 'O3CPU' in env['CPU_MODELS']:
     DebugFlag('RegFileUsage') ### MPINHO 2-april-2019
     DebugFlag('Scoreboard')
     DebugFlag('SimdResolution') ### MPINHO 3-mar-2019
-    DebugFlag('SimdFuseOn') ### MPINHO 3-mar-2019
     DebugFlag('StoreSet')
     DebugFlag('WidthDecoder') ### MPINHO 16-mar-2019
     DebugFlag('Writeback')

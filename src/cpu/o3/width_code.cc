@@ -10,7 +10,10 @@ VecWidthCode::VecWidthCode(int _nElem, int _eBits)
     : eBits(_eBits),
       nElem(_nElem)
 {
-    assert(_nElem * _eBits <= VecRegSizeBits);
+    if (_nElem * _eBits > VecRegSizeBits) {
+        panic("Vector code is too large (%dx%d-bits).",
+              _nElem, _eBits);
+    }
 
     code = std::vector<int>(nElem);
 }
@@ -18,7 +21,10 @@ VecWidthCode::VecWidthCode(int _nElem, int _eBits)
 VecWidthCode::VecWidthCode(int _nElem, int _eBits, int val)
     : VecWidthCode(_nElem, _eBits)
 {
-    assert(val >= 0 && val <= eBits);
+    if (val < 0 || val > eBits) {
+        panic("Invalid code init val: %d (size: %d).",
+              val, _eBits);
+    }
 
     std::fill(code.begin(), code.end(), val);
 }

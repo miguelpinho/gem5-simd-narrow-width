@@ -18,8 +18,8 @@
 class VecWidthCode
 {
     private:
-        static constexpr auto VecRegSizeBits =
-            TheISA::VecRegSizeBytes * 4;
+        static constexpr auto VecRegSizeBits = 128;
+            // static_cast<int>(TheISA::VecRegSizeBytes * 4);
 
         int eBits;
         int nElem;
@@ -40,15 +40,22 @@ class VecWidthCode
 
         void
         set(int pos, int val) {
-            assert(pos >= 0 && pos < nElem);
-            assert(val >= 0 && val <= eBits);
+            if (pos < 0 || pos > nElem) {
+                panic("Invalid code position: %d", pos);
+            }
+            if (val < 0 || val > eBits) {
+                panic("Invalid code val: %d (size: %d, pos: %d).",
+                    val, eBits, pos);
+            }
 
             code[pos] = val;
         }
 
         int
         get(int pos) {
-            assert(pos >= 0 && pos < nElem);
+            if (pos < 0 || pos > nElem) {
+                panic("Invalid code position: %d", pos);
+            }
 
             return (code[pos]);
         }

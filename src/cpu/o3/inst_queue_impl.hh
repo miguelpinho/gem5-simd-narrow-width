@@ -54,7 +54,6 @@
 #include "cpu/o3/fu_pool.hh"
 #include "cpu/o3/inst_queue.hh"
 #include "debug/IQ.hh"
-#include "debug/SimdFuseOn.hh" /// MPINHO 3-mar-2019 ///
 #include "debug/SimdResolution.hh" /// MPINHO 3-mar-2019 ///
 #include "enums/OpClass.hh"
 #include "params/DerivO3CPU.hh"
@@ -846,9 +845,7 @@ InstructionQueue<Impl>::scheduleReadyInsts()
     bool has_issued_vec = false;
     int issued_fuse_vec = 0;
     int issued_other_vec = 0;
-    const bool fuse = DTRACE(SimdFuseOn);
-
-    DPRINTF(SimdResolution, "================\n");
+    const bool fuse = true;
 
     while (total_issued < totalWidth && order_it != order_end_it) {
         OpClass op_class = (*order_it).queueType;
@@ -894,7 +891,12 @@ InstructionQueue<Impl>::scheduleReadyInsts()
             if (widthDecoder.isFuseVecType(issuing_inst)) {
                 // Is trying to issue vector inst with fuse.
                 DPRINTF(SimdResolution,
-                        "Trying to issue fuseable vector inst.\n");
+                        "Trying to issue fuseable vector inst: %s.\n"
+                        "Width code is: %s.\n\n",
+                        issuing_inst->staticInst->disassemble(
+                                issuing_inst->instAddr()),
+                        widthDecoder.strVecInstWidthMask(issuing_inst));
+
 
                 if (issued_other_vec >= 2 || issued_fuse_vec >= 2) {
                     // No more fuse slots available.
