@@ -897,7 +897,6 @@ InstructionQueue<Impl>::scheduleReadyInsts()
                                 issuing_inst->instAddr()),
                         widthDecoder.strVecInstWidthMask(issuing_inst));
 
-
                 if (issued_other_vec >= 2 || issued_fuse_vec >= 2) {
                     // No more fuse slots available.
                     skip = true;

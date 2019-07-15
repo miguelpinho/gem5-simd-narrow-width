@@ -18,8 +18,7 @@
 template <class Impl>
 WidthDecoder<Impl>::WidthDecoder()
     : iqPtr(NULL)
-{
-}
+{}
 
 /// MPINHO 11-may-2019 BEGIN ///
 template <class Impl>
@@ -190,7 +189,7 @@ WidthDecoder<Impl>::vecInstWidthMask(DynInstPtr &inst)
     // instructions with different element size.
     if (pkClass == PackingClass::PackingSimdMult) {
         // Integer simd multiplication.
-        // FIXME: check if this is corect for all multiplication
+        // FIXME: check if this is correct for all multiplication
         // instructions.
 
         // Multiplicand source registers
@@ -208,22 +207,18 @@ WidthDecoder<Impl>::vecInstWidthMask(DynInstPtr &inst)
         // Integer simd addition.
 
         // Width code depends on the specific instruction.
-        std::string name = inst->staticInst->getName();
-        if (decodeMap.find(name) == decodeMap.end()) {
-            panic("Width decoder does no support inst \"%s\".",
-                  name);
-        }
-        DecodeType type = decodeMap[name];
+        DecodeType type = getInstType(inst);
 
         switch (type) {
             case TWO_OP:
                 // Addend source registers.
-
                 {
+                    int srcVn = 2, srcVm = 3;
+
                     VecWidthCode maskVn =
-                        vecSrcRegWidthMask(inst, 2, eSize, nElem);
+                        vecSrcRegWidthMask(inst, srcVn, eSize, nElem);
                     VecWidthCode maskVm =
-                        vecSrcRegWidthMask(inst, 3, eSize, nElem);
+                        vecSrcRegWidthMask(inst, srcVm, eSize, nElem);
 
                     mask = maskVn|maskVm;
                 }
@@ -231,9 +226,10 @@ WidthDecoder<Impl>::vecInstWidthMask(DynInstPtr &inst)
 
             case ONE_OP:
                 // Single source register.
-
                 {
-                    mask = vecSrcRegWidthMask(inst, 2, eSize, nElem);
+                    int srcVn = 2;
+
+                    mask = vecSrcRegWidthMask(inst, srcVn, eSize, nElem);
                 }
                 break;
 
@@ -246,11 +242,12 @@ WidthDecoder<Impl>::vecInstWidthMask(DynInstPtr &inst)
                     mask = vecSrcRegWidthMask(inst, 2, eSize, nElem);
                 } else {
                     // Pair-wise source registers.
+                    int srcVn = 2, srcVm = 3;
 
                     VecWidthCode maskVn =
-                        vecSrcRegWidthMask(inst, 2, eSize, nElem);
+                        vecSrcRegWidthMask(inst, srcVn, eSize, nElem);
                     VecWidthCode maskVm =
-                        vecSrcRegWidthMask(inst, 3, eSize, nElem);
+                        vecSrcRegWidthMask(inst, srcVm, eSize, nElem);
 
                     mask = VecWidthCode(maskVn.numElem(), maskVn.elemBits());
 
@@ -266,6 +263,7 @@ WidthDecoder<Impl>::vecInstWidthMask(DynInstPtr &inst)
 
             default:
                 panic("Should not reach here.");
+                break;
         }
 
     } else {
@@ -442,6 +440,23 @@ WidthDecoder<Impl>::initPackingClass()
     packingClassMap[Enums::SimdMultAcc] = PackingClass::PackingSimdMult;
 }
 
+template <class Impl>
+typename WidthDecoder<Impl>::DecodeType
+WidthDecoder<Impl>::getInstType(DynInstPtr &inst)
+{
+    std::string instName = inst->staticInst->getName();
+
+    if (instName == "add") return TWO_OP;
+    if (instName == "sub") return TWO_OP;
+    if (instName == "addv") return REDUCE_OP;
+    if (instName == "addp") return PAIR_OP;
+    if (instName == "ssubw") return TWO_OP;
+    if (instName == "ssubw2") return TWO_OP;
+    if (instName == "mul") return TWO_OP;
+    if (instName == "mla") return TWO_OP;
+
+    panic("Width decoder does no support inst \"%s\".", instName);
+}
 
 #endif // __CPU_O3_WIDTH_DECODER_IMPL_HH__
 /// MPINHO 12-mar-2019 END ///

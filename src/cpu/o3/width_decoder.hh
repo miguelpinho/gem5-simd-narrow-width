@@ -122,20 +122,14 @@ class WidthDecoder
     std::function<bool(VecWidthCode, VecWidthCode)> packingCriteria;
 
     /// MPINHO 13-may-2019 END ///
-    /// MPINHO 21-may-2019 BEGIN ///
+    /// MPINHO 12-jul-2019 BEGIN ///
     //////////////////////////
     // Decoding Help Map
     //////////////////////////
-    enum DecodeType { TWO_OP, ONE_OP, PAIR_OP };
-    std::unordered_map<std::string, DecodeType> decodeMap = {
-      {"add", TWO_OP},
-      {"sub", TWO_OP},
-      {"addv", ONE_OP},
-      {"addp", PAIR_OP},
-      {"ssubw", TWO_OP},
-      {"ssubw2", TWO_OP}
-    };
-    /// MPINHO 21-may-2019 END ///
+    enum DecodeType { TWO_OP, ONE_OP, PAIR_OP, REDUCE_OP };
+
+    DecodeType getInstType(DynInstPtr &inst);
+    /// MPINHO 12-jul-2019 END ///
 };
 
 #endif // __CPU_O3_WIDTH_DECODER_BOARD_HH__
