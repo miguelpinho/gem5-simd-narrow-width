@@ -44,18 +44,18 @@ WidthDecoder<Impl>::WidthDecoder(DerivO3CPUParams *params)
 
     // Set width definition function.
     switch (widthDef) {
-    case WidthDefinition::Unsigned :
-        prcFunc = unsignedIntResolution;
-        break;
+        case WidthDefinition::Unsigned :
+            prcFunc = unsignedIntResolution;
+            break;
 
-    case WidthDefinition::Signed :
-        prcFunc = signedIntResolution;
-        break;
+        case WidthDefinition::Signed :
+            prcFunc = signedIntResolution;
+            break;
 
-    default:
-        panic("\"%s\" unimplemented width definition.",
-              WidthDefinitionStrings[static_cast<int>(widthDef)]);
-        break;
+        default:
+            panic("\"%s\" unimplemented width definition.",
+                WidthDefinitionStrings[static_cast<int>(widthDef)]);
+            break;
     }
 
     // Set width rounding function based on the block size.
@@ -177,10 +177,9 @@ WidthDecoder<Impl>::vecInstWidthMask(DynInstPtr &inst)
     unsigned eSize = inst->staticInst->vecElemSize();
     unsigned nElem = inst->staticInst->vecNumElem();
 
-    if (eSize == 0) {
-        return VecWidthCode(nElem, 8, 8);
-    }
+    return VecWidthCode(nElem, 8 << eSize, 8 << eSize);
 
+#if 0
     // uses the architecture vec width for the mask size
     VecWidthCode mask;
 
@@ -203,80 +202,8 @@ WidthDecoder<Impl>::vecInstWidthMask(DynInstPtr &inst)
         // default: operation width is the max of operands
         // TODO: should mult width be that of the operands?
         mask = maskVn|maskVm;
-    } else if (pkClass == PackingClass::PackingSimdAdd) {
-        // Integer simd addition.
-
-        // Width code depends on the specific instruction.
-        DecodeType type = getInstType(inst);
-
-        switch (type) {
-            case TWO_OP:
-                // Addend source registers.
-                {
-                    int srcVn = 2, srcVm = 3;
-
-                    VecWidthCode maskVn =
-                        vecSrcRegWidthMask(inst, srcVn, eSize, nElem);
-                    VecWidthCode maskVm =
-                        vecSrcRegWidthMask(inst, srcVm, eSize, nElem);
-
-                    mask = maskVn|maskVm;
-                }
-                break;
-
-            case ONE_OP:
-                // Single source register.
-                {
-                    int srcVn = 2;
-
-                    mask = vecSrcRegWidthMask(inst, srcVn, eSize, nElem);
-                }
-                break;
-
-            case PAIR_OP:
-                // Instructions has two variants.
-
-                if (inst->numSrcRegs() == 3) {
-                    // Single source register.
-
-                    mask = vecSrcRegWidthMask(inst, 2, eSize, nElem);
-                } else {
-                    // Pair-wise source registers.
-                    int srcVn = 2, srcVm = 3;
-
-                    VecWidthCode maskVn =
-                        vecSrcRegWidthMask(inst, srcVn, eSize, nElem);
-                    VecWidthCode maskVm =
-                        vecSrcRegWidthMask(inst, srcVm, eSize, nElem);
-
-                    mask = VecWidthCode(maskVn.numElem(), maskVn.elemBits());
-
-                    // Pair-wise mask generation.
-                    int hElem = nElem >> 1;
-                    for (int i = 0, j = 0; i < hElem ; i++, j+=2) {
-                        mask.set(i, std::max(maskVn.get(j), maskVn.get(j+1)));
-                        mask.set(i+hElem, std::max(maskVm.get(j),
-                                 maskVm.get(j+1)));
-                    }
-                }
-                break;
-
-            default:
-                panic("Should not reach here.");
-                break;
-        }
-
-    } else {
-        // This instruction does not support packing.
-        panic("This operation class (%s) does not support packing.",
-              Enums::OpClassStrings[inst->opClass()]);
     }
-
-    DPRINTF(WidthDecoder, "Vector inst code is %s (eSize=%i).\n",
-            mask.to_string(),
-            eSize);
-
-    return mask;
+#endif
 }
 
 /**
@@ -372,8 +299,23 @@ WidthDecoder<Impl>::vecSrcRegWidthMask(DynInstPtr &inst, int src,
 
 template <class Impl>
 bool
+WidthDecoder<Impl>::isFuseVecType(DynInstPtr &inst)
+{
+#if 0
+    if (!inst->isVector()) {
+        return false;
+    }
+
+    return packingClassMap[inst->opClass()] != PackingClass::NoPacking;
+#endif
+    return false;
+}
+
+template <class Impl>
+bool
 WidthDecoder<Impl>::canFuseVecInst(DynInstPtr &inst1, DynInstPtr &inst2)
 {
+#if 0
     if (!inst1->isVector() || !inst2->isVector()) {
         panic("Trying to fuse non-vector operations.");
     }
@@ -398,18 +340,11 @@ WidthDecoder<Impl>::canFuseVecInst(DynInstPtr &inst1, DynInstPtr &inst2)
             mask2.to_string(),
             Enums::OpClassStrings[inst2->opClass()]);
 
+    // TODO: Use chosen packing.
     return optimalPacking(mask1, mask2);
-}
+#endif
 
-template <class Impl>
-bool
-WidthDecoder<Impl>::isFuseVecType(DynInstPtr &inst)
-{
-    if (!inst->isVector()) {
-        return false;
-    }
-
-    return packingClassMap[inst->opClass()] != PackingClass::NoPacking;
+    return false;
 }
 
 template <class Impl>
@@ -432,30 +367,12 @@ WidthDecoder<Impl>::initPackingClass()
     // packingClassMap[Enums::SimdShiftAcc] = PackingClass::PackingSimdAlu;
 
     // SimdAdd classes
-    packingClassMap[Enums::SimdAdd] = PackingClass::PackingSimdAdd;
+    // packingClassMap[Enums::SimdAdd] = PackingClass::PackingSimdAdd;
     // packingClassMap[Enums::SimdAddAcc] = PackingClass::PackingSimdAdd;
 
     // SimdMult classes
     packingClassMap[Enums::SimdMult] = PackingClass::PackingSimdMult;
     packingClassMap[Enums::SimdMultAcc] = PackingClass::PackingSimdMult;
-}
-
-template <class Impl>
-typename WidthDecoder<Impl>::DecodeType
-WidthDecoder<Impl>::getInstType(DynInstPtr &inst)
-{
-    std::string instName = inst->staticInst->getName();
-
-    if (instName == "add") return TWO_OP;
-    if (instName == "sub") return TWO_OP;
-    if (instName == "addv") return REDUCE_OP;
-    if (instName == "addp") return PAIR_OP;
-    if (instName == "ssubw") return TWO_OP;
-    if (instName == "ssubw2") return TWO_OP;
-    if (instName == "mul") return TWO_OP;
-    if (instName == "mla") return TWO_OP;
-
-    panic("Width decoder does no support inst \"%s\".", instName);
 }
 
 #endif // __CPU_O3_WIDTH_DECODER_IMPL_HH__
