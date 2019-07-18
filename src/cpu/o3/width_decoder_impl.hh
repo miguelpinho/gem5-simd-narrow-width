@@ -4,6 +4,7 @@
 
 #include "arch/generic/vec_reg.hh"
 #include "arch/utility.hh"
+#include "base/bitfield.hh"
 #include "base/logging.hh"
 #include "base/resolution.hh"
 #include "base/trace.hh"
@@ -14,6 +15,11 @@
 #include "debug/WidthDecoder.hh"
 #include "enums/OpClass.hh"
 #include "params/DerivO3CPU.hh"
+
+/// MPINHO 17-jul-2019 BEGIN ///
+#include "arch/arm/generated/decoder.hh"
+
+/// MPINHO 17-jul-2019 END ///
 
 template <class Impl>
 WidthDecoder<Impl>::WidthDecoder()
@@ -301,6 +307,8 @@ template <class Impl>
 bool
 WidthDecoder<Impl>::isFuseVecType(DynInstPtr &inst)
 {
+    decode(inst);
+
 #if 0
     if (!inst->isVector()) {
         return false;
@@ -349,6 +357,54 @@ WidthDecoder<Impl>::canFuseVecInst(DynInstPtr &inst1, DynInstPtr &inst2)
 
 template <class Impl>
 void
+WidthDecoder<Impl>::decode(DynInstPtr &inst)
+{
+    using namespace ArmISAInst;
+
+    ArmISA::ExtMachInst machInst = inst->staticInst->machInst;
+
+    switch (ILLEGALEXEC) {
+
+        case 0x0:
+        switch (DECODERFAULT) {
+
+            case 0x0:
+            switch (THUMB) {
+
+                case 0x0:
+                switch (AARCH64) {
+
+                    case 0x1:
+                    DPRINTF(WidthDecoder, "AARCH64 inst decoded.");
+                    break;
+
+                    default:
+                    DPRINTF(WidthDecoder, "Non AARCH64 inst decoded.");
+                    break;
+
+                }
+                break;
+
+                default:
+                DPRINTF(WidthDecoder, "Non AARCH64 inst decoded.");
+                break;
+            }
+            break;
+
+            default:
+            DPRINTF(WidthDecoder, "Non AARCH64 inst decoded.");
+            break;
+        }
+        break;
+
+        default:
+        DPRINTF(WidthDecoder, "Non AARCH64 inst decoded.");
+        break;
+    }
+}
+
+template <class Impl>
+void
 WidthDecoder<Impl>::regStats()
 {}
 
@@ -374,6 +430,5 @@ WidthDecoder<Impl>::initPackingClass()
     packingClassMap[Enums::SimdMult] = PackingClass::PackingSimdMult;
     packingClassMap[Enums::SimdMultAcc] = PackingClass::PackingSimdMult;
 }
-
 #endif // __CPU_O3_WIDTH_DECODER_IMPL_HH__
 /// MPINHO 12-mar-2019 END ///

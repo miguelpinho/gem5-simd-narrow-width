@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "arch/types.hh"
 #include "base/statistics.hh"
 #include "base/types.hh"
 #include "cpu/o3/width_code.hh"
@@ -37,6 +38,9 @@ class WidthDecoder
     // Typedefs from the Impl.
     // typedef typename Impl::O3CPU O3CPU;
     typedef typename Impl::DynInstPtr DynInstPtr;
+
+    // Typedefs for the ISA.
+    typedef TheISA::ExtMachInst ExtMachInst;
 
     // // Register types.
     // using VecRegContainer = TheISA::VecRegContainer;
@@ -80,11 +84,13 @@ class WidthDecoder
     vecSrcRegWidthMask(DynInstPtr &inst, int src, unsigned eSize,
                        unsigned nElem);
 
+    /** Returns true if vector instruction is of type that can be fused. */
+    bool isFuseVecType(DynInstPtr &inst);
+
     /** Returns true if vector instruction can be fused. */
     bool canFuseVecInst(DynInstPtr &inst1, DynInstPtr &inst2);
 
-    /** Returns true if vector instruction is of type that can be fused. */
-    bool isFuseVecType(DynInstPtr &inst);
+    void decode(DynInstPtr &inst);
 
   protected:
     std::string _name;
@@ -127,8 +133,6 @@ class WidthDecoder
     // Decoding Help Map
     //////////////////////////
     enum DecodeType { TWO_OP, ONE_OP, PAIR_OP, REDUCE_OP };
-
-    DecodeType getInstType(DynInstPtr &inst);
     /// MPINHO 12-jul-2019 END ///
 };
 
