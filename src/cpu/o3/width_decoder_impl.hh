@@ -375,30 +375,35 @@ WidthDecoder<Impl>::decode(DynInstPtr &inst)
                 switch (AARCH64) {
 
                     case 0x1:
-                    DPRINTF(WidthDecoder, "AARCH64 inst decoded.");
+                    DPRINTF(WidthDecoder, "AARCH64 inst decoded: %s.\n",
+                            inst->staticInst->disassemble(inst->instAddr()));
                     break;
 
                     default:
-                    DPRINTF(WidthDecoder, "Non AARCH64 inst decoded.");
+                    DPRINTF(WidthDecoder, "Non AARCH64 inst decoded: %s.\n",
+                            inst->staticInst->disassemble(inst->instAddr()));
                     break;
 
                 }
                 break;
 
                 default:
-                DPRINTF(WidthDecoder, "Non AARCH64 inst decoded.");
+                DPRINTF(WidthDecoder, "Non AARCH64 inst decoded: %s.\n",
+                        inst->staticInst->disassemble(inst->instAddr()));
                 break;
             }
             break;
 
             default:
-            DPRINTF(WidthDecoder, "Non AARCH64 inst decoded.");
+            DPRINTF(WidthDecoder, "Non AARCH64 inst decoded: %s.\n",
+                    inst->staticInst->disassemble(inst->instAddr()));
             break;
         }
         break;
 
         default:
-        DPRINTF(WidthDecoder, "Non AARCH64 inst decoded.");
+        DPRINTF(WidthDecoder, "Non AARCH64 inst decoded: %s.\n",
+                inst->staticInst->disassemble(inst->instAddr()));
         break;
     }
 }
