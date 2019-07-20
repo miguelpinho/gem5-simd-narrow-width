@@ -2,6 +2,7 @@
 #ifndef __CPU_O3_WIDTH_DECODER_IMPL_HH__
 #define __CPU_O3_WIDTH_DECODER_IMPL_HH__
 
+#include "arch/arm/generated/decoder.hh" /// MPINHO 17-jul-2019 END ///
 #include "arch/generic/vec_reg.hh"
 #include "arch/utility.hh"
 #include "base/bitfield.hh"
@@ -15,11 +16,6 @@
 #include "debug/WidthDecoder.hh"
 #include "enums/OpClass.hh"
 #include "params/DerivO3CPU.hh"
-
-/// MPINHO 17-jul-2019 BEGIN ///
-#include "arch/arm/generated/decoder.hh"
-
-/// MPINHO 17-jul-2019 END ///
 
 template <class Impl>
 WidthDecoder<Impl>::WidthDecoder()
@@ -363,48 +359,171 @@ WidthDecoder<Impl>::decode(DynInstPtr &inst)
 
     ArmISA::ExtMachInst machInst = inst->staticInst->machInst;
 
-    switch (ILLEGALEXEC) {
+    if (ILLEGALEXEC == 0x0 && DECODERFAULT == 0x0 && THUMB == 0x0) {
+        if (AARCH64 == 0x1) {
+            if (bits(machInst, 27, 25) == 0x7) {
+                // bit 27:25=111 -> AdvSimd
+                if (bits(machInst, 28) == 0) {
+                    if (bits(machInst, 31) == 0) {
+                        // AdvSimd Vector inst.
+                        DPRINTF(WidthDecoder, "AdvSimd Vector"
+                                " inst decoded: %s.\n",
+                                inst->staticInst->disassemble(
+                                    inst->instAddr()));
 
-        case 0x0:
-        switch (DECODERFAULT) {
+                        if (bits(machInst, 24) == 1) {
+                            if (bits(machInst, 10) == 0) {
+                                // Neon IndexedElem.
+                                DPRINTF(WidthDecoder,
+                                        "Neon Vector IndexedElem"
+                                        " inst decoded: %s.\n",
+                                        inst->staticInst->disassemble(
+                                            inst->instAddr()));
+                            } else if (bits(machInst, 23) == 1) {
+                                // Nop.
+                            } else {
+                                if (bits(machInst, 22, 19)) {
+                                    // Neon ShiftByImm.
+                                    DPRINTF(WidthDecoder,
+                                            "Neon Vector ShiftByImm"
+                                            " inst decoded: %s.\n",
+                                            inst->staticInst->disassemble(
+                                                inst->instAddr()));
+                                } else {
+                                    // Neon NeonModImm.
+                                    DPRINTF(WidthDecoder,
+                                            "Neon Vector ModImm"
+                                            " inst decoded: %s.\n",
+                                            inst->staticInst->disassemble(
+                                                inst->instAddr()));
+                                }
+                            }
+                        } else if (bits(machInst, 21) == 1) {
+                            if (bits(machInst, 10) == 1) {
+                                // Neon 3Same.
+                                DPRINTF(WidthDecoder,
+                                        "Neon Vector 3Same"
+                                        " inst decoded: %s.\n",
+                                        inst->staticInst->disassemble(
+                                            inst->instAddr()));
+                                decode3Same(inst);
+                            } else if (bits(machInst, 11) == 0) {
+                                // Neon 3Diff.
+                                DPRINTF(WidthDecoder,
+                                        "Neon Vector 3Diff"
+                                        " inst decoded: %s.\n",
+                                        inst->staticInst->disassemble(
+                                            inst->instAddr()));
+                            } else if (bits(machInst, 20, 17) == 0x0) {
+                                // Neon 2RegMisc.
+                                DPRINTF(WidthDecoder,
+                                        "Neon Vector 2RegMisc"
+                                        " inst decoded: %s.\n",
+                                        inst->staticInst->disassemble(
+                                            inst->instAddr()));
+                            } else if (bits(machInst, 20, 17) == 0x8) {
+                                // Neon AcrossLanes.
+                                DPRINTF(WidthDecoder,
+                                        "Neon Vector AcrossLanes"
+                                        " inst decoded: %s.\n",
+                                        inst->staticInst->disassemble(
+                                            inst->instAddr()));
+                            }
+                        } else if (bits(machInst, 24) ||
+                                bits(machInst, 21) ||
+                                bits(machInst, 15)) {
+                            // Nop.
+                        } else if (bits(machInst, 10) == 1) {
+                            if (!bits(machInst, 23, 22)) {
+                                // Neon Copy.
+                                DPRINTF(WidthDecoder,
+                                        "Neon Vector Copy"
+                                        " inst decoded: %s.\n",
+                                        inst->staticInst->disassemble(
+                                            inst->instAddr()));
+                            }
+                        } else if (bits(machInst, 29) == 1) {
+                            // Neon Ext.
+                            DPRINTF(WidthDecoder,
+                                    "Neon Ext inst decoded: %s.\n",
+                                    inst->staticInst->disassemble(
+                                        inst->instAddr()));
+                        } else if (bits(machInst, 11) == 1) {
+                            // Neon ZipUzpTrn.
+                            DPRINTF(WidthDecoder,
+                                    "Neon Vector ZipUzpTrn"
+                                    " inst decoded: %s.\n",
+                                    inst->staticInst->disassemble(
+                                        inst->instAddr()));
+                        } else if (bits(machInst, 23, 22) == 0x0) {
+                            // NeonTblTbx.
+                            DPRINTF(WidthDecoder,
+                                    "Neon Vector TblTbx"
+                                    " inst decoded: %s.\n",
+                                    inst->staticInst->disassemble(
+                                        inst->instAddr()));
+                        }
+                    }
+                } else if (bits(machInst, 31) == 0) {
+                    // AdvSimd Scalar inst.
 
-            case 0x0:
-            switch (THUMB) {
-
-                case 0x0:
-                switch (AARCH64) {
-
-                    case 0x1:
-                    DPRINTF(WidthDecoder, "AARCH64 inst decoded: %s.\n",
-                            inst->staticInst->disassemble(inst->instAddr()));
-                    break;
-
-                    default:
-                    DPRINTF(WidthDecoder, "Non AARCH64 inst decoded: %s.\n",
-                            inst->staticInst->disassemble(inst->instAddr()));
-                    break;
-
+                    DPRINTF(WidthDecoder,
+                            "AdvSimd Scalar inst decoded: %s.\n",
+                            inst->staticInst->disassemble(
+                                inst->instAddr()));
+                } else {
+                    // Other AdvSimd inst.
+                    DPRINTF(WidthDecoder, "Other AdvSimd"
+                            " inst decoded: %s.\n",
+                            inst->staticInst->disassemble(
+                                inst->instAddr()));
                 }
-                break;
+            }
 
-                default:
-                DPRINTF(WidthDecoder, "Non AARCH64 inst decoded: %s.\n",
-                        inst->staticInst->disassemble(inst->instAddr()));
-                break;
+            return;
+        }
+    }
+
+    // DPRINTF(WidthDecoder, "Non AARCH64 inst decoded: %s.\n",
+    //         inst->staticInst->disassemble(inst->instAddr()));
+}
+
+template <class Impl>
+void
+WidthDecoder<Impl>::decode3Same(DynInstPtr &inst)
+{
+    using namespace ArmISAInst;
+
+    ArmISA::ExtMachInst machInst = inst->staticInst->machInst;
+
+    uint8_t q = bits(machInst, 30);
+    uint8_t u = bits(machInst, 29);
+    uint8_t size = bits(machInst, 23, 22);
+    uint8_t opcode = bits(machInst, 15, 11);
+
+    // IntRegIndex vd = (IntRegIndex) (uint8_t) bits(machInst, 4, 0);
+    // IntRegIndex vn = (IntRegIndex) (uint8_t) bits(machInst, 9, 5);
+    // IntRegIndex vm = (IntRegIndex) (uint8_t) bits(machInst, 20, 16);
+
+    // uint8_t size_q = (size << 1) | q;
+    // uint8_t sz_q = size_q & 0x3;
+
+    switch (opcode) {
+        case 0x12:
+            // MlsDX, MlsQX, MlaDX, MlaQX
+            DPRINTF(WidthDecoder,
+                    "Neon MLA inst decoded: %s. Size: %d, Q: %d.\n",
+                    inst->staticInst->disassemble(inst->instAddr()),
+                    size, q);
+        case 0x13:
+            if (!u) {
+                // MulDX, MulQX
+                DPRINTF(WidthDecoder,
+                        "Neon MUL inst decoded: %s. Size: %d, Q: %d.\n",
+                        inst->staticInst->disassemble(inst->instAddr()),
+                        size, q);
             }
             break;
-
-            default:
-            DPRINTF(WidthDecoder, "Non AARCH64 inst decoded: %s.\n",
-                    inst->staticInst->disassemble(inst->instAddr()));
-            break;
-        }
-        break;
-
-        default:
-        DPRINTF(WidthDecoder, "Non AARCH64 inst decoded: %s.\n",
-                inst->staticInst->disassemble(inst->instAddr()));
-        break;
     }
 }
 

@@ -91,6 +91,7 @@ class WidthDecoder
     bool canFuseVecInst(DynInstPtr &inst1, DynInstPtr &inst2);
 
     void decode(DynInstPtr &inst);
+    void decode3Same(DynInstPtr &inst);
 
   protected:
     std::string _name;
