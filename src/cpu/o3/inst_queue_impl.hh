@@ -125,6 +125,7 @@ InstructionQueue<Impl>::InstructionQueue(O3CPU *cpu_ptr, IEW *iew_ptr,
 
     // Initialize Width Decoder
     widthDecoder.init(params);
+    widthDecoder.setCPU(cpu);
     widthDecoder.setIQ(this);
 
     resetState();

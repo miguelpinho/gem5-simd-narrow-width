@@ -13,6 +13,7 @@
 #include "cpu/o3/inst_queue.hh"
 #include "cpu/o3/packing_criteria.hh"
 #include "cpu/o3/width_decoder.hh"
+#include "cpu/reg_class.hh"
 #include "debug/WidthDecoder.hh"
 #include "enums/OpClass.hh"
 #include "params/DerivO3CPU.hh"
@@ -24,8 +25,9 @@ WidthDecoder<Impl>::WidthDecoder()
 
 /// MPINHO 11-may-2019 BEGIN ///
 template <class Impl>
-WidthDecoder<Impl>::WidthDecoder(DerivO3CPUParams *params)
+WidthDecoder<Impl>::WidthDecoder(O3CPU *cpu_ptr, DerivO3CPUParams *params)
     : _name(params->name + ".widthdecoder"),
+      cpu(cpu_ptr),
       iqPtr(NULL),
       widthDef(params->widthDefinition),
       blockSize(params->widthBlockSize),
@@ -95,6 +97,13 @@ WidthDecoder<Impl>::WidthDecoder(DerivO3CPUParams *params)
             WidthPackingPolicyStrings[static_cast<int>(packingPolicy)]);
 }
 /// MPINHO 11-may-2019 END ///
+
+template <class Impl>
+void
+WidthDecoder<Impl>::setCPU(O3CPU *cpu_ptr)
+{
+    cpu = cpu_ptr;
+}
 
 template <class Impl>
 void
@@ -213,88 +222,70 @@ WidthDecoder<Impl>::vecInstWidthMask(DynInstPtr &inst)
  */
 template <class Impl>
 VecWidthCode
-WidthDecoder<Impl>::vecSrcRegWidthMask(DynInstPtr &inst, int src,
-                                       unsigned eSize, unsigned nElem)
+WidthDecoder<Impl>::vecSrcRegWidthMask(DynInstPtr &inst,
+                                       uint8_t q, uint8_t size,
+                                       uint8_t op)
 {
     // uses the architecture vec width for the mask size
+    int nBits = 8 << size;
+    int nElem = (8 >> size) << q;
+
     VecWidthCode mask;
 
-    // TODO: check if eSize and nElem match architecture
-
-    if (eSize == 0) {
+    if (size == 0) {
         // 16x8-bit
         // Specific for ARMv8 NEON
-        mask = VecWidthCode(16, 8);
-
-        const VecRegT<uint8_t, 16, true> &vsrc8 =
-            inst->readVecRegOperand(inst->staticInst.get(), src);
-
-        for (size_t i = 0; i < nElem; i++) {
-            int rsl = roundedPrcFunc((uint64_t) vsrc8[i]);
-
-            DPRINTF(WidthDecoder, "    Vec Lane %i: val=%d, rsl=%d\n",
-                    i, (int8_t) vsrc8[i], rsl);
-
-            mask.set(i, rsl);
-        }
-    } else if (eSize == 1) {
+        mask = getWidthVecReg<16, uint8_t>(inst, nElem, nBits, op);
+    } else if (size == 1) {
         // 8x16-bit
         // Specific for ARMv8 NEON
-        mask = VecWidthCode(8, 16);
-
-        const VecRegT<uint16_t, 8, true> &vsrc16 =
-            inst->readVecRegOperand(inst->staticInst.get(), src);
-
-        for (size_t i = 0; i < nElem; i++) {
-            int rsl = roundedPrcFunc((uint64_t) vsrc16[i]);
-
-            DPRINTF(WidthDecoder, "    Vec Lane %i: val=%d, rsl=%d\n",
-                    i, (int16_t) vsrc16[i], rsl);
-
-            mask.set(i, rsl);
-        }
-    } else if (eSize == 2) {
+        mask = getWidthVecReg<8, uint16_t>(inst, nElem, nBits, op);
+    } else if (size == 2) {
         // 4x32-bit
         // Specific for ARMv8 NEON
-        mask = VecWidthCode(4, 32);
-
-        const VecRegT<uint32_t, 4, true> &vsrc32 =
-            inst->readVecRegOperand(inst->staticInst.get(), src);
-
-        for (size_t i = 0; i < nElem; i++)
-        {
-            int rsl = roundedPrcFunc((uint64_t) vsrc32[i]);
-
-            DPRINTF(WidthDecoder, "    Vec Lane %i: val=%d, rsl=%d\n",
-                    i, (int32_t) vsrc32[i], rsl);
-
-            mask.set(i, rsl);
-        }
-    } else if (eSize == 3) {
+        mask = getWidthVecReg<4, uint32_t>(inst, nElem, nBits, op);
+    } else if (size == 3) {
         // 2x64-bit
         // Specific for ARMv8 NEON
-        mask = VecWidthCode(2, 64);
-
-        const VecRegT<uint64_t, 2, true> &vsrc64 =
-            inst->readVecRegOperand(inst->staticInst.get(), src);
-
-        for (size_t i = 0; i < nElem; i++)
-        {
-            int rsl = roundedPrcFunc(vsrc64[i]);
-
-            DPRINTF(WidthDecoder, "    Vec Lane %i: val=%d, rsl=%d\n",
-                    i, (int64_t) vsrc64[i], rsl);
-
-            mask.set(i, rsl);
-        }
+        mask = getWidthVecReg<2, uint64_t>(inst, nElem, nBits, op);
     } else {
-        panic("Unknown eSize %d.", eSize);
+        panic("Unknown eSize %d.", size);
     }
 
     DPRINTF(WidthDecoder, "Source operand %d mask is %s (eSize=%i).\n",
-            src,
+            op,
             mask.to_string(),
-            eSize);
+            size);
+
+    return mask;
+}
+
+template <class Impl>
+template <int Size, typename Elem>
+VecWidthCode
+WidthDecoder<Impl>::getWidthVecReg(DynInstPtr &inst, int nElem, int nBits,
+                                   uint8_t op)
+{
+    assert(nElem <= Size);
+
+    VecWidthCode mask(Size, nBits);
+
+    // FIXME: this count as an invalid access to the register, in terms of
+    // stats?? Create proxy access function?
+    const VecRegT<Elem, Size, true> &vsrc =
+        inst->readVecRegOperand(inst->staticInst.get(), op);
+
+    for (size_t i = 0; i < nElem; i++)
+    {
+        int rsl = roundedPrcFunc((Elem) vsrc[i]);
+
+        assert(rsl <= nBits);
+
+        DPRINTF(WidthDecoder, "    Vec Lane %i: val=%d, rsl=%d\n",
+                i, (int) vsrc[i], rsl);
+
+        mask.set(i, rsl);
+    }
 
     return mask;
 }
@@ -515,6 +506,7 @@ WidthDecoder<Impl>::decode3Same(DynInstPtr &inst)
                     "Neon MLA inst decoded: %s. Size: %d, Q: %d.\n",
                     inst->staticInst->disassemble(inst->instAddr()),
                     size, q);
+            widthOp2VectorRegl(inst, q, size, 2, 3);
         case 0x13:
             if (!u) {
                 // MulDX, MulQX
@@ -522,9 +514,24 @@ WidthDecoder<Impl>::decode3Same(DynInstPtr &inst)
                         "Neon MUL inst decoded: %s. Size: %d, Q: %d.\n",
                         inst->staticInst->disassemble(inst->instAddr()),
                         size, q);
+                widthOp2VectorRegl(inst, q, size, 2, 3);
             }
             break;
     }
+}
+
+template <class Impl>
+void
+WidthDecoder<Impl>::widthOp2VectorRegl(DynInstPtr &inst,
+                                       uint8_t q, uint8_t size,
+                                       uint8_t op1, uint8_t op2)
+{
+    VecWidthCode maskOp1, maskOp2, maskRes;
+
+    maskOp1 = vecSrcRegWidthMask(inst, q, size, op1);
+    maskOp2 = vecSrcRegWidthMask(inst, q, size, op2);
+
+    maskRes = maskOp1.combine2OpRegl(maskOp2);
 }
 
 template <class Impl>

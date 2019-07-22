@@ -69,9 +69,9 @@ class VecWidthCode
 
         std::string to_string();
 
-        VecWidthCode operator|(const VecWidthCode& b);
+        VecWidthCode combine2OpRegl(const VecWidthCode& b);
+        VecWidthCode combine2OpPair(const VecWidthCode& b);
 };
-
 #endif // __WIDTH_CODE_HH__
 
 /// MPINHO 23-mar-2019 END ///

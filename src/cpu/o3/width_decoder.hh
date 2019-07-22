@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cstdint>
 #include <functional>
 #include <iostream>
 #include <unordered_map>
@@ -36,7 +37,7 @@ class WidthDecoder
 {
   public:
     // Typedefs from the Impl.
-    // typedef typename Impl::O3CPU O3CPU;
+    typedef typename Impl::O3CPU O3CPU;
     typedef typename Impl::DynInstPtr DynInstPtr;
 
     // Typedefs for the ISA.
@@ -54,7 +55,7 @@ class WidthDecoder
     WidthDecoder();
 
     /** Constructs a width decoder with given parameters. */
-    WidthDecoder(DerivO3CPUParams *params);
+    WidthDecoder(O3CPU *cpu_ptr, DerivO3CPUParams *params);
 
     /** Destructs the width decoder. */
     ~WidthDecoder();
@@ -67,6 +68,9 @@ class WidthDecoder
 
     /** Registers statistics. */
     void regStats();
+
+    /** Sets the pointer to the CPU. */
+    void setCPU(O3CPU *cpu_ptr);
 
     /** Sets the pointer to the IQ. */
     void setIQ(InstructionQueue<Impl> *iq_ptr);
@@ -81,8 +85,8 @@ class WidthDecoder
 
     /** Return width maks of one of the vector source registers. */
     VecWidthCode
-    vecSrcRegWidthMask(DynInstPtr &inst, int src, unsigned eSize,
-                       unsigned nElem);
+    vecSrcRegWidthMask(DynInstPtr &inst, uint8_t q, uint8_t size,
+                       uint8_t op);
 
     /** Returns true if vector instruction is of type that can be fused. */
     bool isFuseVecType(DynInstPtr &inst);
@@ -93,11 +97,26 @@ class WidthDecoder
     void decode(DynInstPtr &inst);
     void decode3Same(DynInstPtr &inst);
 
+    void widthOp2VectorRegl(DynInstPtr &inst, uint8_t q, uint8_t size,
+                            uint8_t op1, uint8_t op2);
+    void widthOp2VectorPair(DynInstPtr &inst, uint8_t q, uint8_t size,
+                            uint8_t op1, uint8_t op2);
+    void widthOpAcrossVector(DynInstPtr &inst, uint8_t q, uint8_t size,
+                             uint8_t op);
+
   protected:
     std::string _name;
 
+    /** Pointer to the CPU. */
+    O3CPU *cpu;
+
     /** Pointer to the Instruction Queue. */
     InstructionQueue<Impl> *iqPtr;
+
+    template <int Size, typename Elem>
+    VecWidthCode
+    getWidthVecReg(DynInstPtr &inst, int nElem, int nBits,
+                   uint8_t op);
 
     /// MPINHO 08-may-2019 BEGIN ///
     ///////////////////
