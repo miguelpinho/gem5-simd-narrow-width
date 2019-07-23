@@ -1,6 +1,6 @@
 /// MPINHO 21-mar-2019 BEGIN ///
-#ifndef __WIDTH_CODE_HH__
-#define __WIDTH_CODE_HH__
+#ifndef __CPU_O3_WIDTH_CODE_HH__
+#define __CPU_O3_WIDTH_CODE_HH__
 
 #include <algorithm>
 #include <sstream>
@@ -72,6 +72,6 @@ class VecWidthCode
         VecWidthCode combine2OpRegl(const VecWidthCode& b);
         VecWidthCode combine2OpPair(const VecWidthCode& b);
 };
-#endif // __WIDTH_CODE_HH__
+#endif // __CPU_O3_WIDTH_CODE_HH__
 
 /// MPINHO 23-mar-2019 END ///

@@ -68,7 +68,6 @@ WidthDecoder<Impl>::WidthDecoder(O3CPU *cpu_ptr, DerivO3CPUParams *params)
         std::bind(roundFunc, std::bind(prcFunc, std::placeholders::_1),
                   blockSize);
 
-    initPackingClass();
     // Set packing policy function.
     switch (packingPolicy) {
         case WidthPackingPolicy::Disabled :
@@ -151,7 +150,6 @@ WidthDecoder<Impl>::init(DerivO3CPUParams *params)
         std::bind(roundFunc, std::bind(prcFunc, std::placeholders::_1),
                   blockSize);
 
-    initPackingClass();
     // Set packing policy function.
     switch (packingPolicy) {
         case WidthPackingPolicy::Disabled :
@@ -179,38 +177,6 @@ WidthDecoder<Impl>::init(DerivO3CPUParams *params)
     DPRINTF(WidthDecoder, "\tPacking policy: %s.\n",
             WidthPackingPolicyStrings[static_cast<int>(packingPolicy)]);
     /// MPINHO 08-may-2019 END ///
-}
-
-template <class Impl>
-VecWidthCode
-WidthDecoder<Impl>::vecInstWidthMask(DynInstPtr &inst)
-{
-#if 0
-    // uses the architecture vec width for the mask size
-    VecWidthCode mask;
-
-    PackingClass pkClass = packingClassMap[inst->opClass()];
-    // TODO: revise this for special instructions, like immediate and
-    // instructions with different element size.
-    if (pkClass == PackingClass::PackingSimdMult) {
-        // Integer simd multiplication.
-        // FIXME: check if this is correct for all multiplication
-        // instructions.
-
-        // Multiplicand source registers
-        int srcVn = 2, srcVm = 3;
-
-        VecWidthCode maskVn =
-            vecSrcRegWidthMask(inst, srcVn, eSize, nElem);
-        VecWidthCode maskVm =
-            vecSrcRegWidthMask(inst, srcVm, eSize, nElem);
-
-        // default: operation width is the max of operands
-        // TODO: should mult width be that of the operands?
-        mask = maskVn|maskVm;
-    }
-#endif
-    return VecWidthCode();
 }
 
 /**
@@ -331,7 +297,7 @@ WidthDecoder<Impl>::canFuseVecInst(DynInstPtr &inst1, DynInstPtr &inst2)
 }
 
 template <class Impl>
-void
+WidthInfo
 WidthDecoder<Impl>::decode(DynInstPtr &inst)
 {
     using namespace ArmISAInst;
@@ -358,8 +324,10 @@ WidthDecoder<Impl>::decode(DynInstPtr &inst)
                                         " inst decoded: %s.\n",
                                         inst->staticInst->disassemble(
                                             inst->instAddr()));
+                                return(WidthInfo(WidthClass::NoInfo));
                             } else if (bits(machInst, 23) == 1) {
                                 // Nop.
+                                return(WidthInfo(WidthClass::NoInfo));
                             } else {
                                 if (bits(machInst, 22, 19)) {
                                     // Neon ShiftByImm.
@@ -368,6 +336,7 @@ WidthDecoder<Impl>::decode(DynInstPtr &inst)
                                             " inst decoded: %s.\n",
                                             inst->staticInst->disassemble(
                                                 inst->instAddr()));
+                                    return(WidthInfo(WidthClass::NoInfo));
                                 } else {
                                     // Neon NeonModImm.
                                     DPRINTF(WidthDecoder,
@@ -375,6 +344,7 @@ WidthDecoder<Impl>::decode(DynInstPtr &inst)
                                             " inst decoded: %s.\n",
                                             inst->staticInst->disassemble(
                                                 inst->instAddr()));
+                                    return(WidthInfo(WidthClass::NoInfo));
                                 }
                             }
                         } else if (bits(machInst, 21) == 1) {
@@ -385,7 +355,7 @@ WidthDecoder<Impl>::decode(DynInstPtr &inst)
                                         " inst decoded: %s.\n",
                                         inst->staticInst->disassemble(
                                             inst->instAddr()));
-                                decode3Same(inst);
+                                return decode3Same(inst);
                             } else if (bits(machInst, 11) == 0) {
                                 // Neon 3Diff.
                                 DPRINTF(WidthDecoder,
@@ -393,6 +363,7 @@ WidthDecoder<Impl>::decode(DynInstPtr &inst)
                                         " inst decoded: %s.\n",
                                         inst->staticInst->disassemble(
                                             inst->instAddr()));
+                                return(WidthInfo(WidthClass::NoInfo));
                             } else if (bits(machInst, 20, 17) == 0x0) {
                                 // Neon 2RegMisc.
                                 DPRINTF(WidthDecoder,
@@ -400,6 +371,7 @@ WidthDecoder<Impl>::decode(DynInstPtr &inst)
                                         " inst decoded: %s.\n",
                                         inst->staticInst->disassemble(
                                             inst->instAddr()));
+                                return(WidthInfo(WidthClass::NoInfo));
                             } else if (bits(machInst, 20, 17) == 0x8) {
                                 // Neon AcrossLanes.
                                 DPRINTF(WidthDecoder,
@@ -407,6 +379,7 @@ WidthDecoder<Impl>::decode(DynInstPtr &inst)
                                         " inst decoded: %s.\n",
                                         inst->staticInst->disassemble(
                                             inst->instAddr()));
+                                return(WidthInfo(WidthClass::NoInfo));
                             }
                         } else if (bits(machInst, 24) ||
                                 bits(machInst, 21) ||
@@ -420,6 +393,7 @@ WidthDecoder<Impl>::decode(DynInstPtr &inst)
                                         " inst decoded: %s.\n",
                                         inst->staticInst->disassemble(
                                             inst->instAddr()));
+                                return(WidthInfo(WidthClass::NoInfo));
                             }
                         } else if (bits(machInst, 29) == 1) {
                             // Neon Ext.
@@ -427,6 +401,7 @@ WidthDecoder<Impl>::decode(DynInstPtr &inst)
                                     "Neon Ext inst decoded: %s.\n",
                                     inst->staticInst->disassemble(
                                         inst->instAddr()));
+                            return(WidthInfo(WidthClass::NoInfo));
                         } else if (bits(machInst, 11) == 1) {
                             // Neon ZipUzpTrn.
                             DPRINTF(WidthDecoder,
@@ -434,6 +409,7 @@ WidthDecoder<Impl>::decode(DynInstPtr &inst)
                                     " inst decoded: %s.\n",
                                     inst->staticInst->disassemble(
                                         inst->instAddr()));
+                            return(WidthInfo(WidthClass::NoInfo));
                         } else if (bits(machInst, 23, 22) == 0x0) {
                             // NeonTblTbx.
                             DPRINTF(WidthDecoder,
@@ -441,6 +417,7 @@ WidthDecoder<Impl>::decode(DynInstPtr &inst)
                                     " inst decoded: %s.\n",
                                     inst->staticInst->disassemble(
                                         inst->instAddr()));
+                            return(WidthInfo(WidthClass::NoInfo));
                         }
                     }
                 } else if (bits(machInst, 31) == 0) {
@@ -450,25 +427,28 @@ WidthDecoder<Impl>::decode(DynInstPtr &inst)
                             "AdvSimd Scalar inst decoded: %s.\n",
                             inst->staticInst->disassemble(
                                 inst->instAddr()));
+                    return(WidthInfo(WidthClass::NoInfo));
                 } else {
                     // Other AdvSimd inst.
                     DPRINTF(WidthDecoder, "Other AdvSimd"
                             " inst decoded: %s.\n",
                             inst->staticInst->disassemble(
                                 inst->instAddr()));
+                    return(WidthInfo(WidthClass::NoInfo));
                 }
             }
 
-            return;
+            return(WidthInfo(WidthClass::NoInfo));
         }
     }
 
     // DPRINTF(WidthDecoder, "Non AARCH64 inst decoded: %s.\n",
     //         inst->staticInst->disassemble(inst->instAddr()));
+    return(WidthInfo(WidthClass::NoInfo));
 }
 
 template <class Impl>
-void
+WidthInfo
 WidthDecoder<Impl>::decode3Same(DynInstPtr &inst)
 {
     using namespace ArmISAInst;
@@ -494,7 +474,8 @@ WidthDecoder<Impl>::decode3Same(DynInstPtr &inst)
                     "Neon MLA inst decoded: %s. Size: %d, Q: %d.\n",
                     inst->staticInst->disassemble(inst->instAddr()),
                     size, q);
-            widthOp2VectorRegl(inst, q, size, 2, 3);
+            return(WidthInfo(WidthClass::SimdPackingMult,
+                             widthOp2VectorRegl(inst, q, size, 2, 3)));
             break;
         case 0x13:
             if (!u) {
@@ -503,14 +484,17 @@ WidthDecoder<Impl>::decode3Same(DynInstPtr &inst)
                         "Neon MUL inst decoded: %s. Size: %d, Q: %d.\n",
                         inst->staticInst->disassemble(inst->instAddr()),
                         size, q);
-                widthOp2VectorRegl(inst, q, size, 2, 3);
+                return(WidthInfo(WidthClass::SimdPackingMult,
+                                 widthOp2VectorRegl(inst, q, size, 2, 3)));
             }
             break;
     }
+
+    return(WidthInfo(WidthClass::NoInfo));
 }
 
 template <class Impl>
-void
+VecWidthCode
 WidthDecoder<Impl>::widthOp2VectorRegl(DynInstPtr &inst,
                                        uint8_t q, uint8_t size,
                                        uint8_t op1, uint8_t op2)
@@ -525,6 +509,7 @@ WidthDecoder<Impl>::widthOp2VectorRegl(DynInstPtr &inst,
             " width mask %s (eSize=%i).\n",
             maskRes.to_string(),
             size);
+    return maskRes;
 }
 
 template <class Impl>
@@ -532,27 +517,5 @@ void
 WidthDecoder<Impl>::regStats()
 {}
 
-template <class Impl>
-void
-WidthDecoder<Impl>::initPackingClass()
-{
-    packingClassMap.fill(PackingClass::NoPacking);
-
-    // SimdAlu generic classes
-    // packingClassMap[Enums::SimdAlu] = PackingClass::PackingSimdAlu;
-    // packingClassMap[Enums::SimdCmp] = PackingClass::PackingSimdAlu;
-    // packingClassMap[Enums::SimdCvt] = PackingClass::PackingSimdAlu;
-    // packingClassMap[Enums::SimdMisc] = PackingClass::PackingSimdAlu;
-    // packingClassMap[Enums::SimdShift] = PackingClass::PackingSimdAlu;
-    // packingClassMap[Enums::SimdShiftAcc] = PackingClass::PackingSimdAlu;
-
-    // SimdAdd classes
-    // packingClassMap[Enums::SimdAdd] = PackingClass::PackingSimdAdd;
-    // packingClassMap[Enums::SimdAddAcc] = PackingClass::PackingSimdAdd;
-
-    // SimdMult classes
-    packingClassMap[Enums::SimdMult] = PackingClass::PackingSimdMult;
-    packingClassMap[Enums::SimdMultAcc] = PackingClass::PackingSimdMult;
-}
 #endif // __CPU_O3_WIDTH_DECODER_IMPL_HH__
 /// MPINHO 12-mar-2019 END ///

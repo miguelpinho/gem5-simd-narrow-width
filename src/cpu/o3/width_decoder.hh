@@ -14,9 +14,10 @@
 #include "base/statistics.hh"
 #include "base/types.hh"
 #include "cpu/o3/width_code.hh"
+#include "cpu/o3/width_info.hh"
 #include "cpu/op_class.hh"
 #include "debug/WidthDecoder.hh"
-#include "enums/PackingClass.hh"
+#include "enums/WidthClass.hh"
 #include "enums/WidthDefinition.hh"
 #include "enums/WidthPackingPolicy.hh"
 
@@ -78,11 +79,6 @@ class WidthDecoder
     /** Return width mask of a vector instruction. */
     VecWidthCode vecInstWidthMask(DynInstPtr &inst);
 
-    /** Return width mask of a vector instruction as string. */
-    std::string strVecInstWidthMask(DynInstPtr &inst) {
-      return vecInstWidthMask(inst).to_string();
-    }
-
     /** Return width maks of one of the vector source registers. */
     VecWidthCode
     vecSrcRegWidthMask(DynInstPtr &inst, uint8_t q, uint8_t size,
@@ -94,15 +90,18 @@ class WidthDecoder
     /** Returns true if vector instruction can be fused. */
     bool canFuseVecInst(DynInstPtr &inst1, DynInstPtr &inst2);
 
-    void decode(DynInstPtr &inst);
-    void decode3Same(DynInstPtr &inst);
+    WidthInfo decode(DynInstPtr &inst);
+    WidthInfo decode3Same(DynInstPtr &inst);
 
-    void widthOp2VectorRegl(DynInstPtr &inst, uint8_t q, uint8_t size,
-                            uint8_t op1, uint8_t op2);
-    void widthOp2VectorPair(DynInstPtr &inst, uint8_t q, uint8_t size,
-                            uint8_t op1, uint8_t op2);
-    void widthOpAcrossVector(DynInstPtr &inst, uint8_t q, uint8_t size,
-                             uint8_t op);
+    VecWidthCode widthOp2VectorRegl(DynInstPtr &inst,
+                                    uint8_t q, uint8_t size,
+                                    uint8_t op1, uint8_t op2);
+    VecWidthCode widthOp2VectorPair(DynInstPtr &inst,
+                                    uint8_t q, uint8_t size,
+                                    uint8_t op1, uint8_t op2);
+    VecWidthCode widthOpAcrossVector(DynInstPtr &inst,
+                                     uint8_t q, uint8_t size,
+                                     uint8_t op);
 
   protected:
     std::string _name;
@@ -135,25 +134,13 @@ class WidthDecoder
     WidthPackingPolicy packingPolicy;
     /// MPINHO 08-may-2019 END ///
     /// MPINHO 13-may-2019 BEGIN ///
-    /** Packing class of each operation. */
-    std::array<PackingClass, Enums::Num_OpClass> packingClassMap;
-
-    /** Create packing class map */
-    void initPackingClass();
 
     /////////////////////////
     // Packing Criteria
     /////////////////////////
     /** Chosen packing condition. */
     std::function<bool(VecWidthCode, VecWidthCode)> packingCriteria;
-
     /// MPINHO 13-may-2019 END ///
-    /// MPINHO 12-jul-2019 BEGIN ///
-    //////////////////////////
-    // Decoding Help Map
-    //////////////////////////
-    enum DecodeType { TWO_OP, ONE_OP, PAIR_OP, REDUCE_OP };
-    /// MPINHO 12-jul-2019 END ///
 };
 
 #endif // __CPU_O3_WIDTH_DECODER_BOARD_HH__

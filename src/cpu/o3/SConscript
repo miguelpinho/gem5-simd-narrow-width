@@ -53,6 +53,7 @@ if 'O3CPU' in env['CPU_MODELS']:
     Source('mem_dep_unit.cc')
     Source('width_code.cc') ### MPINHO 12-mar-2019
     Source('width_decoder.cc') ### MPINHO 12-mar-2019
+    Source('width_info.cc') ### MPINHO 23-jul-2019
     Source('regfile.cc')
     Source('rename.cc')
     Source('rename_map.cc')

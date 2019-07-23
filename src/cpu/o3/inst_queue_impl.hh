@@ -892,11 +892,9 @@ InstructionQueue<Impl>::scheduleReadyInsts()
             if (widthDecoder.isFuseVecType(issuing_inst)) {
                 // Is trying to issue vector inst with fuse.
                 DPRINTF(SimdResolution,
-                        "Trying to issue fuseable vector inst: %s.\n"
-                        "Width code is: %s.\n\n",
+                        "Trying to issue fuseable vector inst: %s.\n",
                         issuing_inst->staticInst->disassemble(
-                                issuing_inst->instAddr()),
-                        widthDecoder.strVecInstWidthMask(issuing_inst));
+                            issuing_inst->instAddr()));
 
                 if (issued_other_vec >= 2 || issued_fuse_vec >= 2) {
                     // No more fuse slots available.

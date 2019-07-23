@@ -67,9 +67,9 @@ class WidthPackingPolicy(ScopedEnum):
 ### MPINHO 07-may-2019 END ###
 
 ### MPINHO 13-may-2019 BEGIN ###
-class PackingClass(ScopedEnum):
-    vals = [ 'NoPacking', 'PackingSimdAlu', 'PackingSimdAdd',
-             'PackingSimdMult' ]
+class WidthClass(ScopedEnum):
+    vals = [ 'NoInfo', 'SimdNoPacking', 'SimdPackingAdd',
+             'SimdPackingMult' ]
 ### MPINHO 13-may-2019 END ###
 
 class DerivO3CPU(BaseCPU):
