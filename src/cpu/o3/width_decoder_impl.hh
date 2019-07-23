@@ -185,11 +185,6 @@ template <class Impl>
 VecWidthCode
 WidthDecoder<Impl>::vecInstWidthMask(DynInstPtr &inst)
 {
-    unsigned eSize = inst->staticInst->vecElemSize();
-    unsigned nElem = inst->staticInst->vecNumElem();
-
-    return VecWidthCode(nElem, 8 << eSize, 8 << eSize);
-
 #if 0
     // uses the architecture vec width for the mask size
     VecWidthCode mask;
@@ -215,6 +210,7 @@ WidthDecoder<Impl>::vecInstWidthMask(DynInstPtr &inst)
         mask = maskVn|maskVm;
     }
 #endif
+    return VecWidthCode();
 }
 
 /**
