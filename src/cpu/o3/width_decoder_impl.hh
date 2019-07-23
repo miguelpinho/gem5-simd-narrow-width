@@ -226,28 +226,20 @@ WidthDecoder<Impl>::vecSrcRegWidthMask(DynInstPtr &inst,
                                        uint8_t q, uint8_t size,
                                        uint8_t op)
 {
-    // uses the architecture vec width for the mask size
-    int nBits = 8 << size;
-    int nElem = (8 >> size) << q;
-
     VecWidthCode mask;
 
     if (size == 0) {
-        // 16x8-bit
-        // Specific for ARMv8 NEON
-        mask = getWidthVecReg<16, uint8_t>(inst, nElem, nBits, op);
+        // 16x8-bit or (8x8-bit)
+        mask = getWidthVecReg<16, int8_t>(inst, (q ? 16 : 8), 8, op);
     } else if (size == 1) {
-        // 8x16-bit
-        // Specific for ARMv8 NEON
-        mask = getWidthVecReg<8, uint16_t>(inst, nElem, nBits, op);
+        // 8x16-bit or (4x16-bit)
+        mask = getWidthVecReg<8, int16_t>(inst, (q ? 8 : 4), 16, op);
     } else if (size == 2) {
-        // 4x32-bit
-        // Specific for ARMv8 NEON
-        mask = getWidthVecReg<4, uint32_t>(inst, nElem, nBits, op);
+        // 4x32-bit or (2x32-bit)
+        mask = getWidthVecReg<4, int32_t>(inst, (q ? 4 : 2), 32, op);
     } else if (size == 3) {
-        // 2x64-bit
-        // Specific for ARMv8 NEON
-        mask = getWidthVecReg<2, uint64_t>(inst, nElem, nBits, op);
+        // 2x64-bit (or 1x64-bit)
+        mask = getWidthVecReg<2, int64_t>(inst, (q ? 2 : 1), 64, op);
     } else {
         panic("Unknown eSize %d.", size);
     }
@@ -277,12 +269,12 @@ WidthDecoder<Impl>::getWidthVecReg(DynInstPtr &inst, int nElem, int nBits,
 
     for (size_t i = 0; i < nElem; i++)
     {
-        int rsl = roundedPrcFunc((Elem) vsrc[i]);
-
-        assert(rsl <= nBits);
+        int rsl = roundedPrcFunc((uint64_t) (int64_t) vsrc[i]);
 
         DPRINTF(WidthDecoder, "    Vec Lane %i: val=%d, rsl=%d\n",
                 i, (int) vsrc[i], rsl);
+
+        assert(rsl <= nBits);
 
         mask.set(i, rsl);
     }
@@ -532,6 +524,10 @@ WidthDecoder<Impl>::widthOp2VectorRegl(DynInstPtr &inst,
     maskOp2 = vecSrcRegWidthMask(inst, q, size, op2);
 
     maskRes = maskOp1.combine2OpRegl(maskOp2);
+    DPRINTF(WidthDecoder, "Instruction with 2 vectors operands (regular) has"
+            " width mask %s (eSize=%i).\n",
+            maskRes.to_string(),
+            size);
 }
 
 template <class Impl>
