@@ -499,6 +499,7 @@ WidthDecoder<Impl>::decode3Same(DynInstPtr &inst)
                     inst->staticInst->disassemble(inst->instAddr()),
                     size, q);
             widthOp2VectorRegl(inst, q, size, 2, 3);
+            break;
         case 0x13:
             if (!u) {
                 // MulDX, MulQX
