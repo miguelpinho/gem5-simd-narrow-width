@@ -11,10 +11,10 @@
 #include "base/trace.hh"
 #include "cpu/o3/comm.hh"
 #include "cpu/o3/inst_queue.hh"
-#include "cpu/o3/packing_criteria.hh"
 #include "cpu/o3/width_decoder.hh"
 #include "cpu/reg_class.hh"
 #include "debug/WidthDecoder.hh"
+#include "debug/WidthDecoderDecode.hh"
 #include "enums/OpClass.hh"
 #include "params/DerivO3CPU.hh"
 
@@ -248,52 +248,27 @@ template <class Impl>
 bool
 WidthDecoder<Impl>::isFuseVecType(DynInstPtr &inst)
 {
-    decode(inst);
+    WidthInfo inst_width = decode(inst);
 
-#if 0
-    if (!inst->isVector()) {
-        return false;
-    }
-
-    return packingClassMap[inst->opClass()] != PackingClass::NoPacking;
-#endif
-    return false;
+    return inst_width.isFuseType();
 }
 
 template <class Impl>
 bool
 WidthDecoder<Impl>::canFuseVecInst(DynInstPtr &inst1, DynInstPtr &inst2)
 {
-#if 0
     if (!inst1->isVector() || !inst2->isVector()) {
         panic("Trying to fuse non-vector operations.");
     }
 
-    // Can only pack instructions of certain type combinations.
-    if (packingClassMap[inst1->opClass()] == PackingClass::NoPacking ||
-        packingClassMap[inst2->opClass()] == PackingClass::NoPacking) {
-        // One of the instructions is not of a packing type.
-        return false;
-    } else if (packingClassMap[inst1->opClass()] !=
-               packingClassMap[inst2->opClass()]) {
-        // The instructions' packing class does not match.
-        return false;
-    }
+    WidthInfo inst1_width = decode(inst1), inst2_width = decode(inst2);
 
-    VecWidthCode mask1 = vecInstWidthMask(inst1);
-    VecWidthCode mask2 = vecInstWidthMask(inst2);
-
-    DPRINTF(WidthDecoder, "Trying to fuse %s (%s) and %s (%s).\n",
-            mask1.to_string(),
-            Enums::OpClassStrings[inst1->opClass()],
-            mask2.to_string(),
-            Enums::OpClassStrings[inst2->opClass()]);
+    DPRINTF(WidthDecoder, "Trying to fuse %s and %s.\n",
+            inst1->staticInst->disassemble(inst1->instAddr()),
+            inst2->staticInst->disassemble(inst2->instAddr()));
 
     // TODO: Use chosen packing.
-    return optimalPacking(mask1, mask2);
-#endif
-
-    return false;
+    return inst1_width.canFuse(inst2_width, optimalPacking);
 }
 
 template <class Impl>
@@ -311,15 +286,15 @@ WidthDecoder<Impl>::decode(DynInstPtr &inst)
                 if (bits(machInst, 28) == 0) {
                     if (bits(machInst, 31) == 0) {
                         // AdvSimd Vector inst.
-                        DPRINTF(WidthDecoder, "AdvSimd Vector"
-                                " inst decoded: %s.\n",
+                        DPRINTF(WidthDecoderDecode,
+                                "AdvSimd Vector inst decoded: %s.\n",
                                 inst->staticInst->disassemble(
                                     inst->instAddr()));
 
                         if (bits(machInst, 24) == 1) {
                             if (bits(machInst, 10) == 0) {
                                 // Neon IndexedElem.
-                                DPRINTF(WidthDecoder,
+                                DPRINTF(WidthDecoderDecode,
                                         "Neon Vector IndexedElem"
                                         " inst decoded: %s.\n",
                                         inst->staticInst->disassemble(
@@ -331,7 +306,7 @@ WidthDecoder<Impl>::decode(DynInstPtr &inst)
                             } else {
                                 if (bits(machInst, 22, 19)) {
                                     // Neon ShiftByImm.
-                                    DPRINTF(WidthDecoder,
+                                    DPRINTF(WidthDecoderDecode,
                                             "Neon Vector ShiftByImm"
                                             " inst decoded: %s.\n",
                                             inst->staticInst->disassemble(
@@ -339,7 +314,7 @@ WidthDecoder<Impl>::decode(DynInstPtr &inst)
                                     return(WidthInfo(WidthClass::NoInfo));
                                 } else {
                                     // Neon NeonModImm.
-                                    DPRINTF(WidthDecoder,
+                                    DPRINTF(WidthDecoderDecode,
                                             "Neon Vector ModImm"
                                             " inst decoded: %s.\n",
                                             inst->staticInst->disassemble(
@@ -350,7 +325,7 @@ WidthDecoder<Impl>::decode(DynInstPtr &inst)
                         } else if (bits(machInst, 21) == 1) {
                             if (bits(machInst, 10) == 1) {
                                 // Neon 3Same.
-                                DPRINTF(WidthDecoder,
+                                DPRINTF(WidthDecoderDecode,
                                         "Neon Vector 3Same"
                                         " inst decoded: %s.\n",
                                         inst->staticInst->disassemble(
@@ -358,7 +333,7 @@ WidthDecoder<Impl>::decode(DynInstPtr &inst)
                                 return decode3Same(inst);
                             } else if (bits(machInst, 11) == 0) {
                                 // Neon 3Diff.
-                                DPRINTF(WidthDecoder,
+                                DPRINTF(WidthDecoderDecode,
                                         "Neon Vector 3Diff"
                                         " inst decoded: %s.\n",
                                         inst->staticInst->disassemble(
@@ -366,7 +341,7 @@ WidthDecoder<Impl>::decode(DynInstPtr &inst)
                                 return(WidthInfo(WidthClass::NoInfo));
                             } else if (bits(machInst, 20, 17) == 0x0) {
                                 // Neon 2RegMisc.
-                                DPRINTF(WidthDecoder,
+                                DPRINTF(WidthDecoderDecode,
                                         "Neon Vector 2RegMisc"
                                         " inst decoded: %s.\n",
                                         inst->staticInst->disassemble(
@@ -374,7 +349,7 @@ WidthDecoder<Impl>::decode(DynInstPtr &inst)
                                 return(WidthInfo(WidthClass::NoInfo));
                             } else if (bits(machInst, 20, 17) == 0x8) {
                                 // Neon AcrossLanes.
-                                DPRINTF(WidthDecoder,
+                                DPRINTF(WidthDecoderDecode,
                                         "Neon Vector AcrossLanes"
                                         " inst decoded: %s.\n",
                                         inst->staticInst->disassemble(
@@ -388,7 +363,7 @@ WidthDecoder<Impl>::decode(DynInstPtr &inst)
                         } else if (bits(machInst, 10) == 1) {
                             if (!bits(machInst, 23, 22)) {
                                 // Neon Copy.
-                                DPRINTF(WidthDecoder,
+                                DPRINTF(WidthDecoderDecode,
                                         "Neon Vector Copy"
                                         " inst decoded: %s.\n",
                                         inst->staticInst->disassemble(
@@ -397,14 +372,14 @@ WidthDecoder<Impl>::decode(DynInstPtr &inst)
                             }
                         } else if (bits(machInst, 29) == 1) {
                             // Neon Ext.
-                            DPRINTF(WidthDecoder,
+                            DPRINTF(WidthDecoderDecode,
                                     "Neon Ext inst decoded: %s.\n",
                                     inst->staticInst->disassemble(
                                         inst->instAddr()));
                             return(WidthInfo(WidthClass::NoInfo));
                         } else if (bits(machInst, 11) == 1) {
                             // Neon ZipUzpTrn.
-                            DPRINTF(WidthDecoder,
+                            DPRINTF(WidthDecoderDecode,
                                     "Neon Vector ZipUzpTrn"
                                     " inst decoded: %s.\n",
                                     inst->staticInst->disassemble(
@@ -412,7 +387,7 @@ WidthDecoder<Impl>::decode(DynInstPtr &inst)
                             return(WidthInfo(WidthClass::NoInfo));
                         } else if (bits(machInst, 23, 22) == 0x0) {
                             // NeonTblTbx.
-                            DPRINTF(WidthDecoder,
+                            DPRINTF(WidthDecoderDecode,
                                     "Neon Vector TblTbx"
                                     " inst decoded: %s.\n",
                                     inst->staticInst->disassemble(
@@ -423,15 +398,15 @@ WidthDecoder<Impl>::decode(DynInstPtr &inst)
                 } else if (bits(machInst, 31) == 0) {
                     // AdvSimd Scalar inst.
 
-                    DPRINTF(WidthDecoder,
+                    DPRINTF(WidthDecoderDecode,
                             "AdvSimd Scalar inst decoded: %s.\n",
                             inst->staticInst->disassemble(
                                 inst->instAddr()));
                     return(WidthInfo(WidthClass::NoInfo));
                 } else {
                     // Other AdvSimd inst.
-                    DPRINTF(WidthDecoder, "Other AdvSimd"
-                            " inst decoded: %s.\n",
+                    DPRINTF(WidthDecoderDecode,
+                            "Other AdvSimd inst decoded: %s.\n",
                             inst->staticInst->disassemble(
                                 inst->instAddr()));
                     return(WidthInfo(WidthClass::NoInfo));
@@ -442,8 +417,9 @@ WidthDecoder<Impl>::decode(DynInstPtr &inst)
         }
     }
 
-    // DPRINTF(WidthDecoder, "Non AARCH64 inst decoded: %s.\n",
-    //         inst->staticInst->disassemble(inst->instAddr()));
+    DPRINTF(WidthDecoderDecode,
+            "Non AARCH64 inst decoded: %s.\n",
+            inst->staticInst->disassemble(inst->instAddr()));
     return(WidthInfo(WidthClass::NoInfo));
 }
 

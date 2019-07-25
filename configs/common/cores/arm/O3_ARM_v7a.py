@@ -145,7 +145,7 @@ class O3_ARM_v7a_3(DerivO3CPU):
     numPhysIntRegs = 128
     numPhysFloatRegs = 192
     # numPhysVecRegs = 48
-    numPhysVecRegs = 100
+    numPhysVecRegs = 68
     # numIQEntries = 32
     numIQEntries = 42
     # numROBEntries = 40

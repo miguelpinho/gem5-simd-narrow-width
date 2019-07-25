@@ -6,6 +6,7 @@
 #include <utility>
 
 #include "arch/utility.hh"
+#include "cpu/o3/packing_criteria.hh"
 #include "cpu/o3/width_code.hh"
 #include "enums/WidthClass.hh"
 
@@ -23,6 +24,9 @@ class WidthInfo {
     public:
         WidthInfo(WidthClass _width_class);
         WidthInfo(WidthClass _width_class, VecWidthCode _width_mask);
+
+        bool isFuseType();
+        bool canFuse(WidthInfo &b, PackingCriteria packingCriteria);
 };
 
 #endif // __CPU_O3_WIDTH_INFO_HH_

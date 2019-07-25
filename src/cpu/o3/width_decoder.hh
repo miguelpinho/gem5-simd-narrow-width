@@ -13,6 +13,7 @@
 #include "arch/types.hh"
 #include "base/statistics.hh"
 #include "base/types.hh"
+#include "cpu/o3/packing_criteria.hh"
 #include "cpu/o3/width_code.hh"
 #include "cpu/o3/width_info.hh"
 #include "cpu/op_class.hh"
@@ -139,7 +140,7 @@ class WidthDecoder
     // Packing Criteria
     /////////////////////////
     /** Chosen packing condition. */
-    std::function<bool(VecWidthCode, VecWidthCode)> packingCriteria;
+    PackingCriteria packingCriteria;
     /// MPINHO 13-may-2019 END ///
 };
 
