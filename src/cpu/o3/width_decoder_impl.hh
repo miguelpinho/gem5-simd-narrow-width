@@ -15,6 +15,7 @@
 #include "cpu/reg_class.hh"
 #include "debug/WidthDecoder.hh"
 #include "debug/WidthDecoderDecode.hh"
+#include "debug/WidthDecoderWidth.hh"
 #include "enums/OpClass.hh"
 #include "params/DerivO3CPU.hh"
 
@@ -206,7 +207,7 @@ WidthDecoder<Impl>::vecSrcRegWidthMask(DynInstPtr &inst,
         panic("Unknown eSize %d.", size);
     }
 
-    DPRINTF(WidthDecoder, "Source operand %d mask is %s (eSize=%i).\n",
+    DPRINTF(WidthDecoderWidth, "Source operand %d mask is %s (eSize=%i).\n",
             op,
             mask.to_string(),
             size);
@@ -233,7 +234,7 @@ WidthDecoder<Impl>::getWidthVecReg(DynInstPtr &inst, int nElem, int nBits,
     {
         int rsl = roundedPrcFunc((uint64_t) (int64_t) vsrc[i]);
 
-        DPRINTF(WidthDecoder, "    Vec Lane %i: val=%d, rsl=%d\n",
+        DPRINTF(WidthDecoderWidth, "    Vec Lane %i: val=%d, rsl=%d\n",
                 i, (int) vsrc[i], rsl);
 
         assert(rsl <= nBits);
@@ -445,9 +446,7 @@ WidthDecoder<Impl>::decodeNeon3Same(DynInstPtr &inst)
 
     switch (opcode) {
         case 0x00:
-            if (size == 0x3) {
-                return(WidthInfo(WidthClass::NoInfo));
-            } else {
+            if (size != 0x3) {
                 // UhaddDX, UhaddQX, ShaddDX, ShaddQX
                 DPRINTF(WidthDecoderDecode,
                         "Neon HADD inst decoded: %s. Size: %d, Q: %d.\n",
@@ -458,9 +457,7 @@ WidthDecoder<Impl>::decodeNeon3Same(DynInstPtr &inst)
             }
             break;
         case 0x01:
-            if (size_q == 0x6) {
-                return(WidthInfo(WidthClass::NoInfo));
-            } else {
+            if (size_q != 0x6) {
                 // UqaddDX, UqaddQX, SqaddDX, SqaddQX
                 DPRINTF(WidthDecoderDecode,
                         "Neon QADD inst decoded: %s. Size: %d, Q: %d.\n",
@@ -471,9 +468,7 @@ WidthDecoder<Impl>::decodeNeon3Same(DynInstPtr &inst)
             }
             break;
         case 0x02:
-            if (size == 0x3) {
-                return(WidthInfo(WidthClass::NoInfo));
-            } else {
+            if (size != 0x3) {
                 // UrhaddDX, UrhaddQX, SrhaddDX, SrhaddQX
                 DPRINTF(WidthDecoderDecode,
                         "Neon RHADD inst decoded: %s. Size: %d, Q: %d.\n",
@@ -484,9 +479,7 @@ WidthDecoder<Impl>::decodeNeon3Same(DynInstPtr &inst)
             }
             break;
         case 0x04:
-            if (size == 0x3) {
-                return(WidthInfo(WidthClass::NoInfo));
-            } else {
+            if (size != 0x3) {
                 // UhsubDX, UhsubQX, ShsubDX, ShsubQX
                 DPRINTF(WidthDecoderDecode,
                         "Neon HSUB inst decoded: %s. Size: %d, Q: %d.\n",
@@ -497,9 +490,7 @@ WidthDecoder<Impl>::decodeNeon3Same(DynInstPtr &inst)
             }
             break;
         case 0x05:
-            if (size_q == 0x6) {
-                return(WidthInfo(WidthClass::NoInfo));
-            } else {
+            if (size_q != 0x6) {
                 // UqsubDX, UqsubQX, SqsubDX, SqsubQX
                 DPRINTF(WidthDecoderDecode,
                         "Neon QSUB inst decoded: %s. Size: %d, Q: %d.\n",
@@ -510,9 +501,7 @@ WidthDecoder<Impl>::decodeNeon3Same(DynInstPtr &inst)
             }
             break;
         case 0x06:
-            if (size_q == 0x6) {
-                return(WidthInfo(WidthClass::NoInfo));
-            } else {
+            if (size_q != 0x6) {
                 // CmhiDX, CmhiQX, CmgtDX, CmgtQX
                 DPRINTF(WidthDecoderDecode,
                         "Neon %s inst decoded: %s. Size: %d, Q: %d.\n",
@@ -524,9 +513,7 @@ WidthDecoder<Impl>::decodeNeon3Same(DynInstPtr &inst)
             }
             break;
         case 0x07:
-            if (size_q == 0x6) {
-                return(WidthInfo(WidthClass::NoInfo));
-            } else {
+            if (size_q != 0x6) {
                 // CmhsDX, CmhsQX, CmgeDX, CmgeQX
                 DPRINTF(WidthDecoderDecode,
                         "Neon %s inst decoded: %s. Size: %d, Q: %d.\n",
@@ -538,9 +525,7 @@ WidthDecoder<Impl>::decodeNeon3Same(DynInstPtr &inst)
             }
             break;
         case 0x0c:
-            if (size == 0x3) {
-                return(WidthInfo(WidthClass::NoInfo));
-            } else {
+            if (size != 0x3) {
                 // UmaxDX, UmaxQX, SmaxDX, SmaxQX
                 DPRINTF(WidthDecoderDecode,
                         "Neon MAX inst decoded: %s. Size: %d, Q: %d.\n",
@@ -551,9 +536,7 @@ WidthDecoder<Impl>::decodeNeon3Same(DynInstPtr &inst)
             }
             break;
         case 0x0d:
-            if (size == 0x3) {
-                return(WidthInfo(WidthClass::NoInfo));
-            } else {
+            if (size != 0x3) {
                 // UminDX, UminQX, SminDX, SminQX
                 DPRINTF(WidthDecoderDecode,
                         "Neon MIN inst decoded: %s. Size: %d, Q: %d.\n",
@@ -564,9 +547,7 @@ WidthDecoder<Impl>::decodeNeon3Same(DynInstPtr &inst)
             }
             break;
         case 0x0e:
-            if (size == 0x3) {
-                return(WidthInfo(WidthClass::NoInfo));
-            } else {
+            if (size != 0x3) {
                 // UabdDX, UabdQX, SabdDX, SabdQX
                 DPRINTF(WidthDecoderDecode,
                         "Neon ABA inst decoded: %s. Size: %d, Q: %d.\n",
@@ -577,9 +558,7 @@ WidthDecoder<Impl>::decodeNeon3Same(DynInstPtr &inst)
             }
             break;
         case 0x0f:
-            if (size == 0x3) {
-                return(WidthInfo(WidthClass::NoInfo));
-            } else {
+            if (size != 0x3) {
                 // UabaDX, UabaQX, SabaDX, SabaQX
                 DPRINTF(WidthDecoderDecode,
                         "Neon ABA inst decoded: %s. Size: %d, Q: %d.\n",
@@ -590,9 +569,7 @@ WidthDecoder<Impl>::decodeNeon3Same(DynInstPtr &inst)
             }
             break;
         case 0x10:
-            if (size_q == 0x6) {
-                return(WidthInfo(WidthClass::NoInfo));
-            } else {
+            if (size_q != 0x6) {
                 // SubDX, SubQX, AddDX, AddQX
                 DPRINTF(WidthDecoderDecode,
                         "Neon %s inst decoded: %s. Size: %d, Q: %d.\n",
@@ -604,9 +581,7 @@ WidthDecoder<Impl>::decodeNeon3Same(DynInstPtr &inst)
             }
             break;
         case 0x11:
-            if (size_q == 0x6) {
-                return(WidthInfo(WidthClass::NoInfo));
-            } else {
+            if (size_q != 0x6) {
                 if (u) {
                     // CmeqDX, CmeqQX
                     DPRINTF(WidthDecoderDecode,
@@ -628,9 +603,7 @@ WidthDecoder<Impl>::decodeNeon3Same(DynInstPtr &inst)
             break;
         case 0x12:
             // MlsDX, MlsQX, MlaDX, MlaQX
-            if (size == 0x3) {
-                return(WidthInfo(WidthClass::NoInfo));
-            } else {
+            if (size != 0x3) {
                 DPRINTF(WidthDecoderDecode,
                         "Neon %s inst decoded: %s. Size: %d, Q: %d.\n",
                         (u) ? "MLS" : "MLA",
@@ -651,6 +624,41 @@ WidthDecoder<Impl>::decodeNeon3Same(DynInstPtr &inst)
                                  widthOp2VectorRegl(inst, q, size, 2, 3)));
             }
             break;
+        case 0x14:
+            if (size != 0x3) {
+                // UmaxpDX, UmaxpQX, SmaxpDX, SmaxpQX
+                DPRINTF(WidthDecoderDecode,
+                        "Neon MAXP inst decoded: %s. Size: %d, Q: %d.\n",
+                        inst->staticInst->disassemble(inst->instAddr()),
+                        size, q);
+                return(WidthInfo(WidthClass::SimdPackingAdd,
+                                widthOp2VectorPair(inst, q, size, 2, 3)));
+            }
+            break;
+        case 0x15:
+            if (size != 0x3) {
+                // UminpDX, UminpQX, SminpDX, SminpQX
+                DPRINTF(WidthDecoderDecode,
+                        "Neon MINP inst decoded: %s. Size: %d, Q: %d.\n",
+                        inst->staticInst->disassemble(inst->instAddr()),
+                        size, q);
+                return(WidthInfo(WidthClass::SimdPackingAdd,
+                                widthOp2VectorPair(inst, q, size, 2, 3)));
+            }
+            break;
+        case 0x17:
+            if (u || size_q == 0x6) {
+                return(WidthInfo(WidthClass::NoInfo));
+            } else {
+                // AddpDX, AddpQX
+                DPRINTF(WidthDecoderDecode,
+                        "Neon ADDP inst decoded: %s. Size: %d, Q: %d.\n",
+                        inst->staticInst->disassemble(inst->instAddr()),
+                        size, q);
+                return(WidthInfo(WidthClass::SimdPackingAdd,
+                                widthOp2VectorPair(inst, q, size, 2, 3)));
+            }
+            break;
     }
 
     return(WidthInfo(WidthClass::NoInfo));
@@ -668,8 +676,27 @@ WidthDecoder<Impl>::widthOp2VectorRegl(DynInstPtr &inst,
     maskOp2 = vecSrcRegWidthMask(inst, q, size, op2);
 
     maskRes = maskOp1.combine2OpRegl(maskOp2);
-    DPRINTF(WidthDecoder, "Instruction with 2 vectors operands (regular) has"
-            " width mask %s (eSize=%i).\n",
+    DPRINTF(WidthDecoderWidth, "Instruction with 2 vectors operands (regular)"
+            " has width mask %s (eSize=%i).\n",
+            maskRes.to_string(),
+            size);
+    return maskRes;
+}
+
+template <class Impl>
+VecWidthCode
+WidthDecoder<Impl>::widthOp2VectorPair(DynInstPtr &inst,
+                                       uint8_t q, uint8_t size,
+                                       uint8_t op1, uint8_t op2)
+{
+    VecWidthCode maskOp1, maskOp2, maskRes;
+
+    maskOp1 = vecSrcRegWidthMask(inst, q, size, op1);
+    maskOp2 = vecSrcRegWidthMask(inst, q, size, op2);
+
+    maskRes = maskOp1.combine2OpPair(maskOp2);
+    DPRINTF(WidthDecoderWidth, "Instruction with 2 vectors operands (pairwise)"
+            " has width mask %s (eSize=%i).\n",
             maskRes.to_string(),
             size);
     return maskRes;
