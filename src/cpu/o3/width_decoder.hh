@@ -92,7 +92,7 @@ class WidthDecoder
     bool canFuseVecInst(DynInstPtr &inst1, DynInstPtr &inst2);
 
     WidthInfo decode(DynInstPtr &inst);
-    WidthInfo decode3Same(DynInstPtr &inst);
+    WidthInfo decodeNeon3Same(DynInstPtr &inst);
 
     VecWidthCode widthOp2VectorRegl(DynInstPtr &inst,
                                     uint8_t q, uint8_t size,
