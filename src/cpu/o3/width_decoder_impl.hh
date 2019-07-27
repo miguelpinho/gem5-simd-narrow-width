@@ -437,12 +437,7 @@ WidthDecoder<Impl>::decodeNeon3Same(DynInstPtr &inst)
     uint8_t size = bits(machInst, 23, 22);
     uint8_t opcode = bits(machInst, 15, 11);
 
-    // IntRegIndex vd = (IntRegIndex) (uint8_t) bits(machInst, 4, 0);
-    // IntRegIndex vn = (IntRegIndex) (uint8_t) bits(machInst, 9, 5);
-    // IntRegIndex vm = (IntRegIndex) (uint8_t) bits(machInst, 20, 16);
-
     uint8_t size_q = (size << 1) | q;
-    // uint8_t sz_q = size_q & 0x3;
 
     switch (opcode) {
         case 0x00:
@@ -596,7 +591,7 @@ WidthDecoder<Impl>::decodeNeon3Same(DynInstPtr &inst)
                             "Neon CMTST inst decoded: %s. Size: %d, Q: %d.\n",
                             inst->staticInst->disassemble(inst->instAddr()),
                             size, q);
-                    return(WidthInfo(WidthClass::SimdNoPacking,
+                    return(WidthInfo(WidthClass::SimdPackingAlu,
                                     widthOp2VectorRegl(inst, q, size, 2, 3)));
                 }
             }
