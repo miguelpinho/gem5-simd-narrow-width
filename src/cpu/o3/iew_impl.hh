@@ -1137,6 +1137,7 @@ DefaultIEW<Impl>::dispatchInsts(ThreadID tid)
 
             // Specifically insert it as nonspeculative.
             instQueue.insertNonSpec(inst);
+            instQueue.generateWidthInfo(inst); /// MPINHO 29-jul-2019 ///
 
             ++iewDispNonSpecInsts;
 
@@ -1147,6 +1148,7 @@ DefaultIEW<Impl>::dispatchInsts(ThreadID tid)
         // instruction.
         if (add_to_iq) {
             instQueue.insert(inst);
+            instQueue.generateWidthInfo(inst); /// MPINHO 29-jul-2019 ///
         }
 
         insts_to_dispatch.pop();

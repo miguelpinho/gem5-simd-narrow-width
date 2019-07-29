@@ -190,6 +190,10 @@ class InstructionQueue
      */
     void insertBarrier(const DynInstPtr &barr_inst);
 
+    /// MPINHO 29-jul-2019 BEGIN ///
+    void generateWidthInfo(DynInstPtr &new_inst);
+    /// MPINHO 29-jul-2019 END ///
+
     /** Returns the oldest scheduled instruction, and removes it from
      * the list of instructions waiting to execute.
      */
@@ -531,6 +535,10 @@ class InstructionQueue
 //    Stats::Vector dist_unissued;
     /** Stat for total number issued for each instruction type. */
     Stats::Vector2d statIssuedInstType;
+
+    /// MPINHO 29-jul-2019 BEGIN ///
+    Stats::Vector statIssuedWidthClassType;
+    /// MPINHO 29-jul-2019 END ///
 
     /** Number of instructions issued per cycle. */
     Stats::Formula issueRate;

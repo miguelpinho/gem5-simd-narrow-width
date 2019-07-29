@@ -56,6 +56,7 @@
 #include "debug/IQ.hh"
 #include "debug/SimdResolution.hh" /// MPINHO 3-mar-2019 ///
 #include "enums/OpClass.hh"
+#include "enums/WidthClass.hh"
 #include "params/DerivO3CPU.hh"
 #include "sim/core.hh"
 
@@ -284,6 +285,19 @@ InstructionQueue<Impl>::regStats()
         .flags(total | pdf | dist)
         ;
     statIssuedInstType.ysubnames(Enums::OpClassStrings);
+
+    /// MPINHO 29-jul-2019 BEGIN ///
+    statIssuedWidthClassType
+        .init(static_cast<int>(WidthClass::Num_WidthClass))
+        .name(name() + ".width_class")
+        .desc("Width class of issued inst")
+        .flags(total | pdf | dist)
+        ;
+    for (int i=0; i < static_cast<int>(WidthClass::Num_WidthClass); i++) {
+        statIssuedWidthClassType
+            .subname(i, WidthClassStrings[i]);
+    }
+    /// MPINHO 29-jul-2019 END ///
 
     //
     //  How long did instructions for a particular FU type wait prior to issue
@@ -717,6 +731,16 @@ InstructionQueue<Impl>::insertBarrier(const DynInstPtr &barr_inst)
     insertNonSpec(barr_inst);
 }
 
+/// MPINHO 29-jul-2019 BEGIN ///
+template <class Impl>
+void
+InstructionQueue<Impl>::generateWidthInfo(DynInstPtr &new_inst)
+{
+    widthDecoder.addWidthInfo(new_inst);
+}
+/// MPINHO 29-jul-2019 END ///
+
+
 template <class Impl>
 typename Impl::DynInstPtr
 InstructionQueue<Impl>::getInstToExecute()
@@ -846,7 +870,6 @@ InstructionQueue<Impl>::scheduleReadyInsts()
     bool has_issued_vec = false;
     int issued_fuse_vec = 0;
     int issued_other_vec = 0;
-    const bool fuse = true;
 
     while (total_issued < totalWidth && order_it != order_end_it) {
         OpClass op_class = (*order_it).queueType;
@@ -907,13 +930,9 @@ InstructionQueue<Impl>::scheduleReadyInsts()
                         bool can_fuse = false;
 
                         // Verify if this vector inst can be fused.
-                        if (fuse) {
-                            can_fuse =
-                                widthDecoder.canFuseVecInst(last_vec_inst,
-                                                            issuing_inst);
-                        } else {
-                            can_fuse = false;
-                        }
+                        can_fuse =
+                            widthDecoder.canFuseInst(last_vec_inst,
+                                                        issuing_inst);
 
                         DPRINTF(SimdResolution,
                                 "Can fuse vector instruction: %s.\n",
@@ -1047,6 +1066,8 @@ InstructionQueue<Impl>::scheduleReadyInsts()
 
                 listOrder.erase(order_it++);
                 statIssuedInstType[tid][op_class]++;
+                statIssuedWidthClassType[
+                    static_cast<int>(issuing_inst->getWidthClass())]++;
             } else {
                 statFuBusy[op_class]++;
                 fuBusy[tid]++;

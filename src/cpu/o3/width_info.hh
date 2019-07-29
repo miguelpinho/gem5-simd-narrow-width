@@ -22,9 +22,11 @@ class WidthInfo {
         VecWidthCode width_mask;
 
     public:
+        WidthInfo();
         WidthInfo(WidthClass _width_class);
         WidthInfo(WidthClass _width_class, VecWidthCode _width_mask);
 
+        WidthClass getWidthClass();
         bool isFuseType();
         bool canFuse(WidthInfo &b, PackingCriteria packingCriteria);
 };

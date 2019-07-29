@@ -246,23 +246,25 @@ WidthDecoder<Impl>::getWidthVecReg(DynInstPtr &inst, int nElem, int nBits,
 }
 
 template <class Impl>
-bool
-WidthDecoder<Impl>::isFuseVecType(DynInstPtr &inst)
+void
+WidthDecoder<Impl>::addWidthInfo(DynInstPtr &inst)
 {
-    WidthInfo inst_width = decode(inst);
-
-    return inst_width.isFuseType();
+    inst->setWidth(decode(inst));
 }
 
 template <class Impl>
 bool
-WidthDecoder<Impl>::canFuseVecInst(DynInstPtr &inst1, DynInstPtr &inst2)
+WidthDecoder<Impl>::isFuseVecType(DynInstPtr &inst)
 {
-    if (!inst1->isVector() || !inst2->isVector()) {
-        panic("Trying to fuse non-vector operations.");
-    }
+    return inst->getWidth().isFuseType();
+}
 
-    WidthInfo inst1_width = decode(inst1), inst2_width = decode(inst2);
+template <class Impl>
+bool
+WidthDecoder<Impl>::canFuseInst(DynInstPtr &inst1, DynInstPtr &inst2)
+{
+    WidthInfo inst1_width = inst1->getWidth();
+    WidthInfo inst2_width = inst2->getWidth();
 
     DPRINTF(WidthDecoder, "Trying to fuse %s and %s.\n",
             inst1->staticInst->disassemble(inst1->instAddr()),

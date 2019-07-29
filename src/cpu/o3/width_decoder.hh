@@ -85,14 +85,15 @@ class WidthDecoder
     vecSrcRegWidthMask(DynInstPtr &inst, uint8_t q, uint8_t size,
                        uint8_t op);
 
+    /** Returns the width information for a given instruction. */
+    void addWidthInfo(DynInstPtr &inst);
+
     /** Returns true if vector instruction is of type that can be fused. */
     bool isFuseVecType(DynInstPtr &inst);
 
-    /** Returns true if vector instruction can be fused. */
-    bool canFuseVecInst(DynInstPtr &inst1, DynInstPtr &inst2);
+    /** Returns true if the two instructions are compatible for fuse. */
+    bool canFuseInst(DynInstPtr &inst1, DynInstPtr &inst2);
 
-    WidthInfo decode(DynInstPtr &inst);
-    WidthInfo decodeNeon3Same(DynInstPtr &inst);
 
     VecWidthCode widthOp2VectorRegl(DynInstPtr &inst,
                                     uint8_t q, uint8_t size,
@@ -142,6 +143,11 @@ class WidthDecoder
     /** Chosen packing condition. */
     PackingCriteria packingCriteria;
     /// MPINHO 13-may-2019 END ///
+
+    /** Decode instruction width. */
+    WidthInfo decode(DynInstPtr &inst);
+    /** Decode 3Same instruction width. */
+    WidthInfo decodeNeon3Same(DynInstPtr &inst);
 };
 
 #endif // __CPU_O3_WIDTH_DECODER_BOARD_HH__
