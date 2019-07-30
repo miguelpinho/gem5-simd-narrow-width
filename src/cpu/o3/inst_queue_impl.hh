@@ -56,7 +56,8 @@
 #include "debug/IQ.hh"
 #include "debug/SimdResolution.hh" /// MPINHO 3-mar-2019 ///
 #include "enums/OpClass.hh"
-#include "enums/WidthClass.hh"
+#include "enums/VecElemSize.hh" /// MPINHO 30-jul-2019 ///
+#include "enums/WidthClass.hh" /// MPINHO 29-jul-2019 ///
 #include "params/DerivO3CPU.hh"
 #include "sim/core.hh"
 
@@ -296,6 +297,16 @@ InstructionQueue<Impl>::regStats()
     for (int i=0; i < static_cast<int>(WidthClass::Num_WidthClass); i++) {
         statIssuedWidthClassType
             .subname(i, WidthClassStrings[i]);
+    }
+    statIssuedVecElemSize
+        .init(static_cast<int>(VecElemSize::Num_VecElemSize))
+        .name(name() + ".elem_size")
+        .desc("Elem size of issued vector insts")
+        .flags(total | pdf | dist)
+        ;
+    for (int i=0; i < static_cast<int>(VecElemSize::Num_VecElemSize); i++) {
+        statIssuedVecElemSize
+            .subname(i, VecElemSizeStrings[i]);
     }
     /// MPINHO 29-jul-2019 END ///
 
@@ -1066,8 +1077,13 @@ InstructionQueue<Impl>::scheduleReadyInsts()
 
                 listOrder.erase(order_it++);
                 statIssuedInstType[tid][op_class]++;
+                /// MPINHO 30-jul-2019 BEGIN ///
                 statIssuedWidthClassType[
                     static_cast<int>(issuing_inst->getWidthClass())]++;
+                if (issuing_inst->isVector())
+                    statIssuedVecElemSize[
+                        static_cast<int>(issuing_inst->getElemSize())]++;
+                /// MPINHO 30-jul-2019 END ///
             } else {
                 statFuBusy[op_class]++;
                 fuBusy[tid]++;

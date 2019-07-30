@@ -3,22 +3,41 @@
 #include "cpu/o3/width_info.hh"
 
 WidthInfo::WidthInfo()
-    : width_class(WidthClass::NoInfo)
+    : width_class(WidthClass::NoInfo),
+      elem_size(VecElemSize::Unknown)
 {}
 
 WidthInfo::WidthInfo(WidthClass _width_class)
-    : width_class(_width_class)
+    : width_class(_width_class),
+      elem_size(VecElemSize::Unknown)
 {}
 
 WidthInfo::WidthInfo(WidthClass _width_class,
-                     VecWidthCode _width_mask)
+                     VecWidthCode _width_mask,
+                     uint8_t _size)
     : width_class(_width_class), width_mask(_width_mask)
-{}
-
-WidthClass
-WidthInfo::getWidthClass()
 {
-    return width_class;
+    switch (_size) {
+        case 0:
+            elem_size = VecElemSize::Bit8;
+            break;
+
+        case 1:
+            elem_size = VecElemSize::Bit16;
+            break;
+
+        case 2:
+            elem_size = VecElemSize::Bit32;
+            break;
+
+        case 3:
+            elem_size = VecElemSize::Bit64;
+            break;
+
+        default:
+            panic("Invalid vector elem size: %d.", _size);
+            break;
+    }
 }
 
 bool

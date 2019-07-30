@@ -537,7 +537,10 @@ class InstructionQueue
     Stats::Vector2d statIssuedInstType;
 
     /// MPINHO 29-jul-2019 BEGIN ///
+    /** Number of instructions issued by width class. */
     Stats::Vector statIssuedWidthClassType;
+    /** Number of vector instructions issued by elem size. */
+    Stats::Vector statIssuedVecElemSize;
     /// MPINHO 29-jul-2019 END ///
 
     /** Number of instructions issued per cycle. */
@@ -557,7 +560,8 @@ class InstructionQueue
     Stats::Scalar numFuseVecFailNoALU;
     /* Number of vector fuse successes. */
     Stats::Scalar numFuseVecSuccess;
-    /// MPINHO 18-mar-2019 END ///
+    /// MPTODO ///
+    /* Number of cycles vector instructions are issued. */
     Stats::Scalar cyclesVecActive;
     /// MPINHO 18-mar-2019 END ///
    public:

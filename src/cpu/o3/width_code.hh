@@ -19,7 +19,6 @@ class VecWidthCode
 {
     private:
         static constexpr auto VecRegSizeBits = 128;
-            // static_cast<int>(TheISA::VecRegSizeBytes * 4);
 
         int eBits;
         int nElem;

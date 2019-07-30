@@ -54,7 +54,8 @@
 #include "cpu/o3/isa_specific.hh"
 #include "cpu/o3/width_info.hh"
 #include "cpu/reg_class.hh"
-#include "enums/WidthClass.hh"
+#include "enums/VecElemSize.hh" /// MPINHO 30-jul-2019 ///
+#include "enums/WidthClass.hh" /// MPINHO 29-jul-2019 ///
 
 class Packet;
 
@@ -454,23 +455,17 @@ protected:
 
 public:
 
-    void
-    setWidth(WidthInfo _width)
-    {
-        width = _width;
-    }
+    /** Set the instruction width information. */
+    void setWidth(WidthInfo _width) { width = _width; }
 
-    WidthInfo
-    getWidth()
-    {
-        return width;
-    }
+    /** Get the instruction width information. */
+    WidthInfo getWidth() { return width; }
 
-    WidthClass
-    getWidthClass()
-    {
-        return width.getWidthClass();
-    }
+    /** Get the instruction width class. */
+    WidthClass getWidthClass() { return width.getWidthClass(); }
+
+    /** Get the instruction elem size. */
+    VecElemSize getElemSize() { return width.getElemSize(); }
 /// MPINHO 29-jul-2019 END ///
 };
 
