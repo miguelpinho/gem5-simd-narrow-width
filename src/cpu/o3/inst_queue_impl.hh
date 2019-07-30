@@ -287,29 +287,6 @@ InstructionQueue<Impl>::regStats()
         ;
     statIssuedInstType.ysubnames(Enums::OpClassStrings);
 
-    /// MPINHO 29-jul-2019 BEGIN ///
-    statIssuedWidthClassType
-        .init(static_cast<int>(WidthClass::Num_WidthClass))
-        .name(name() + ".width_class")
-        .desc("Width class of issued inst")
-        .flags(total | pdf | dist)
-        ;
-    for (int i=0; i < static_cast<int>(WidthClass::Num_WidthClass); i++) {
-        statIssuedWidthClassType
-            .subname(i, WidthClassStrings[i]);
-    }
-    statIssuedVecElemSize
-        .init(static_cast<int>(VecElemSize::Num_VecElemSize))
-        .name(name() + ".elem_size")
-        .desc("Elem size of issued vector insts")
-        .flags(total | pdf | dist)
-        ;
-    for (int i=0; i < static_cast<int>(VecElemSize::Num_VecElemSize); i++) {
-        statIssuedVecElemSize
-            .subname(i, VecElemSizeStrings[i]);
-    }
-    /// MPINHO 29-jul-2019 END ///
-
     //
     //  How long did instructions for a particular FU type wait prior to issue
     //
@@ -358,32 +335,125 @@ InstructionQueue<Impl>::regStats()
         ;
     fuBusyRate = fuBusy / iqInstsIssued;
 
-    /// MPINHO 18-mar-2019 BEGIN ///
-    numFuseVecChances
-        .name(name() + ".numFuseVecChances")
+    /// MPINHO 30-jul-2019 BEGIN ///
+    statIssuedWidthClass
+        .init(static_cast<int>(WidthClass::Num_WidthClass))
+        .name(name() + ".widthClass")
+        .desc("Width class of issued inst")
+        .flags(total | pdf | dist)
+        ;
+    for (int i=0; i < static_cast<int>(WidthClass::Num_WidthClass); i++) {
+        statIssuedWidthClass
+            .subname(i, WidthClassStrings[i]);
+    }
+
+    statIssuedVecElemSize
+        .init(static_cast<int>(VecElemSize::Num_VecElemSize))
+        .name(name() + ".elemSize")
+        .desc("Elem size of issued vector insts")
+        .flags(total | pdf | dist)
+        ;
+    for (int i=0; i < static_cast<int>(VecElemSize::Num_VecElemSize); i++) {
+        statIssuedVecElemSize
+            .subname(i, VecElemSizeStrings[i]);
+    }
+
+    statFuseChances
+        .init(static_cast<int>(WidthClass::Num_WidthClass))
+        .name(name() + ".fuseChances")
         .desc("Number of second instructions found for fuse")
+        .flags(total)
         ;
-
-    numFuseVecFailNoMatch
-        .name(name() + ".numFuseVecFailNoMatch")
-        .desc("Number of fuse fails due to width unmatch")
+    statFuseChancesNorm
+        .name(name() + ".fuseChancesNorm")
+        .desc("Fraction of second instructions found for fuse,"
+              " over instructions issued of that class")
         ;
+    statFuseChancesNorm = statFuseChances / statIssuedWidthClass;
+    statFuseChancesNormTotal
+        .name(name() + ".fuseChancesNormTotal")
+        .desc("Fraction of second instructions found for fuse,"
+              " over all instructions issued")
+        ;
+    statFuseChancesNormTotal = statFuseChances / iqInstsIssued;
 
-    numFuseVecFailNoALU
-        .name(name() + ".numFuseVecFailNoALU")
+    statFuseFailNoMatch
+        .init(static_cast<int>(WidthClass::Num_WidthClass))
+        .name(name() + ".fuseFailNoMatch")
+        .desc("Number of fuse fails due to width mismatch")
+        .flags(total)
+        ;
+    statFuseFailNoMatchNorm
+        .name(name() + ".fuseFailNoMatchNorm")
+        .desc("Fraction of fuse fails due to width mismatch,"
+              " over instructions issued of that class")
+        ;
+    statFuseFailNoMatchNorm = statFuseFailNoMatch / statIssuedWidthClass;
+    statFuseFailNoMatchNormTotal
+        .name(name() + ".fuseFailNoMatchNormTotal")
+        .desc("Fraction of fuse fails due to width mismatch,"
+              " over all instructions issued")
+        ;
+    statFuseFailNoMatchNormTotal = statFuseFailNoMatch / iqInstsIssued;
+
+    statFuseFailNoALU
+        .init(static_cast<int>(WidthClass::Num_WidthClass))
+        .name(name() + ".fuseFailNoALU")
         .desc("Number of fuse fails due to unavailable proxy ALU")
+        .flags(total)
         ;
+    statFuseFailNoALUNorm
+        .name(name() + ".fuseFailNoALUNorm")
+        .desc("Fraction of fuse fails due to unavailable proxy ALU,"
+              " over instructions issued of that class")
+        ;
+    statFuseFailNoALUNorm = statFuseFailNoALU / statIssuedWidthClass;
+    statFuseFailNoALUNormTotal
+        .name(name() + ".fuseFailNoALUNormTotal")
+        .desc("Fraction of fuse fails due to unavailable proxy ALU,"
+              " over all instructions issued")
+        ;
+    statFuseFailNoALUNormTotal = statFuseFailNoALU / iqInstsIssued;
 
-    numFuseVecSuccess
-        .name(name() + ".numFuseVecSuccess")
-        .desc("Number of vector fuse successes")
+    statFuseSuccess
+        .init(static_cast<int>(WidthClass::Num_WidthClass))
+        .name(name() + ".fuseSuccess")
+        .desc("Number of fuse successes")
+        .flags(total)
         ;
+    statFuseSuccess
+        .name(name() + ".fuseSuccessNorm")
+        .desc("Fraction of fuse successes,"
+              " over instructions issued of that class")
+        ;
+    statFuseSuccessNorm = statFuseSuccess / statIssuedWidthClass;
+    statFuseSuccessNormTotal
+        .name(name() + ".fuseSuccessNormTotal")
+        .desc("Fraction of fuse successes,"
+              " over all instructions issued")
+        ;
+    statFuseSuccessNormTotal = statFuseSuccess / iqInstsIssued;
+
+    for (int i=0; i < static_cast<int>(WidthClass::Num_WidthClass); i++) {
+        statFuseChances.subname(i, WidthClassStrings[i]);
+        statFuseChancesNorm.subname(i, WidthClassStrings[i]);
+        statFuseChancesNormTotal.subname(i, WidthClassStrings[i]);
+        statFuseFailNoMatch.subname(i, WidthClassStrings[i]);
+        statFuseFailNoMatchNorm.subname(i, WidthClassStrings[i]);
+        statFuseFailNoMatchNormTotal.subname(i, WidthClassStrings[i]);
+        statFuseFailNoALU.subname(i, WidthClassStrings[i]);
+        statFuseFailNoALUNorm.subname(i, WidthClassStrings[i]);
+        statFuseFailNoALUNormTotal.subname(i, WidthClassStrings[i]);
+        statFuseSuccess.subname(i, WidthClassStrings[i]);
+        statFuseSuccessNorm.subname(i, WidthClassStrings[i]);
+        statFuseSuccessNormTotal.subname(i, WidthClassStrings[i]);
+    }
 
     cyclesVecActive
         .name(name() + ".cyclesVecActive")
         .desc("Cycles with activity in the vector ALU")
         ;
-    /// MPINHO 18-mar-2019 END ///
+    /// MPINHO 30-jul-2019 END ///
 
     for (ThreadID tid = 0; tid < numThreads; tid++) {
         // Tell mem dependence unit to reg stats as well.
@@ -897,6 +967,10 @@ InstructionQueue<Impl>::scheduleReadyInsts()
             intInstQueueReads++;
         }
 
+        /// MPINHO 30-jul-2019 BEGIN ///
+        WidthClass width_class = issuing_inst->getWidthClass();
+        /// MPINHO 30-jul-2019 END ///
+
         assert(issuing_inst->seqNum == (*order_it).oldestInst);
 
         if (issuing_inst->isSquashed()) {
@@ -936,14 +1010,14 @@ InstructionQueue<Impl>::scheduleReadyInsts()
                 } else {
                     if (has_issued_vec) {
                         // Possible fuse opportunity.
-                        numFuseVecChances++;
+                        statFuseChances[static_cast<int>(width_class)]++;
 
                         bool can_fuse = false;
 
                         // Verify if this vector inst can be fused.
                         can_fuse =
                             widthDecoder.canFuseInst(last_vec_inst,
-                                                        issuing_inst);
+                                                     issuing_inst);
 
                         DPRINTF(SimdResolution,
                                 "Can fuse vector instruction: %s.\n",
@@ -951,7 +1025,8 @@ InstructionQueue<Impl>::scheduleReadyInsts()
 
                         if (!can_fuse) {
                             // Will not fuse vec due to width mismatch.
-                            numFuseVecFailNoMatch++;
+                            statFuseFailNoMatch[
+                                static_cast<int>(width_class)]++;
                         }
 
                         skip = !can_fuse;
@@ -1045,7 +1120,7 @@ InstructionQueue<Impl>::scheduleReadyInsts()
                             last_vec_inst = issuing_inst;
                         } else {
                             // An instruction was fused with success
-                            numFuseVecSuccess++;
+                            statFuseSuccess[static_cast<int>(width_class)]++;
 
                             // Clean the vector information.
                             last_vec_inst = NULL;
@@ -1078,11 +1153,9 @@ InstructionQueue<Impl>::scheduleReadyInsts()
                 listOrder.erase(order_it++);
                 statIssuedInstType[tid][op_class]++;
                 /// MPINHO 30-jul-2019 BEGIN ///
-                statIssuedWidthClassType[
-                    static_cast<int>(issuing_inst->getWidthClass())]++;
+                statIssuedWidthClass[static_cast<int>(width_class)]++;
                 if (issuing_inst->isVector())
-                    statIssuedVecElemSize[
-                        static_cast<int>(issuing_inst->getElemSize())]++;
+                    statIssuedVecElemSize[static_cast<int>(width_class)]++;
                 /// MPINHO 30-jul-2019 END ///
             } else {
                 statFuBusy[op_class]++;
@@ -1096,7 +1169,7 @@ InstructionQueue<Impl>::scheduleReadyInsts()
                     // FIXME: find a way to increase the ALU count just for
                     // this.
 
-                    numFuseVecFailNoALU++;
+                    statFuseFailNoALU[static_cast<int>(width_class)]++;
                 }
                 /// MPINHO 18-mar-2019 END ///
             }
