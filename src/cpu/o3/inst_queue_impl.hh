@@ -421,7 +421,7 @@ InstructionQueue<Impl>::regStats()
         .desc("Number of fuse successes")
         .flags(total)
         ;
-    statFuseSuccess
+    statFuseSuccessNorm
         .name(name() + ".fuseSuccessNorm")
         .desc("Fraction of fuse successes,"
               " over instructions issued of that class")
