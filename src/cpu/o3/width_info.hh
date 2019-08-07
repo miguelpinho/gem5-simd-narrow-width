@@ -34,6 +34,7 @@ class WidthInfo {
         VecElemSize getElemSize() { return elem_size; }
         bool isFuseType();
         bool canFuse(WidthInfo &b, PackingCriteria packingCriteria);
+        std::string to_string();
 };
 
 #endif // __CPU_O3_WIDTH_INFO_HH_

@@ -66,4 +66,19 @@ WidthInfo::canFuse(WidthInfo &b, PackingCriteria packingCriteria)
     return packingCriteria(width_mask, b.width_mask);
 }
 
+std::string
+WidthInfo::to_string()
+{
+    std::stringstream ss;
+
+    ss << WidthClassStrings[static_cast<int>(width_class)];
+
+    if (width_class != WidthClass::NoInfo) {
+        ss << "::";
+        ss << width_mask.to_string();
+    }
+
+    return ss.str();
+}
+
 /// MPINHO 23-jul-2019 END ///

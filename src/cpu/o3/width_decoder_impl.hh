@@ -249,8 +249,13 @@ template <class Impl>
 void
 WidthDecoder<Impl>::addWidthInfo(const DynInstPtr &inst)
 {
-    // TODO: print width code for debug.
     inst->setWidth(decode(inst));
+
+    DPRINTF(WidthDecoder, "Instruction \"%s\" was assigned"
+            " width information: \"%s\".\n",
+            inst->staticInst->disassemble(
+                inst->instAddr()),
+            inst->getWidth().to_string());
 }
 
 template <class Impl>
