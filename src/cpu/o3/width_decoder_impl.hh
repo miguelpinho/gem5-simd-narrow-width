@@ -185,7 +185,7 @@ WidthDecoder<Impl>::init(DerivO3CPUParams *params)
  */
 template <class Impl>
 VecWidthCode
-WidthDecoder<Impl>::vecSrcRegWidthMask(DynInstPtr &inst,
+WidthDecoder<Impl>::vecSrcRegWidthMask(const DynInstPtr &inst,
                                        uint8_t q, uint8_t size,
                                        uint8_t op)
 {
@@ -218,8 +218,8 @@ WidthDecoder<Impl>::vecSrcRegWidthMask(DynInstPtr &inst,
 template <class Impl>
 template <int Size, typename Elem>
 VecWidthCode
-WidthDecoder<Impl>::getWidthVecReg(DynInstPtr &inst, int nElem, int nBits,
-                                   uint8_t op)
+WidthDecoder<Impl>::getWidthVecReg(const DynInstPtr &inst, int nElem,
+                                   int nBits, uint8_t op)
 {
     assert(nElem <= Size);
 
@@ -247,21 +247,23 @@ WidthDecoder<Impl>::getWidthVecReg(DynInstPtr &inst, int nElem, int nBits,
 
 template <class Impl>
 void
-WidthDecoder<Impl>::addWidthInfo(DynInstPtr &inst)
+WidthDecoder<Impl>::addWidthInfo(const DynInstPtr &inst)
 {
+    // TODO: print width code for debug.
     inst->setWidth(decode(inst));
 }
 
 template <class Impl>
 bool
-WidthDecoder<Impl>::isFuseVecType(DynInstPtr &inst)
+WidthDecoder<Impl>::isFuseVecType(const DynInstPtr &inst)
 {
     return inst->getWidth().isFuseType();
 }
 
 template <class Impl>
 bool
-WidthDecoder<Impl>::canFuseInst(DynInstPtr &inst1, DynInstPtr &inst2)
+WidthDecoder<Impl>::canFuseInst(const DynInstPtr &inst1,
+                                const DynInstPtr &inst2)
 {
     WidthInfo inst1_width = inst1->getWidth();
     WidthInfo inst2_width = inst2->getWidth();
@@ -276,7 +278,7 @@ WidthDecoder<Impl>::canFuseInst(DynInstPtr &inst1, DynInstPtr &inst2)
 
 template <class Impl>
 WidthInfo
-WidthDecoder<Impl>::decode(DynInstPtr &inst)
+WidthDecoder<Impl>::decode(const DynInstPtr &inst)
 {
     using namespace ArmISAInst;
 
@@ -428,7 +430,7 @@ WidthDecoder<Impl>::decode(DynInstPtr &inst)
 
 template <class Impl>
 WidthInfo
-WidthDecoder<Impl>::decodeNeon3Same(DynInstPtr &inst)
+WidthDecoder<Impl>::decodeNeon3Same(const DynInstPtr &inst)
 {
     using namespace ArmISAInst;
 
@@ -682,7 +684,7 @@ WidthDecoder<Impl>::decodeNeon3Same(DynInstPtr &inst)
 
 template <class Impl>
 VecWidthCode
-WidthDecoder<Impl>::widthOp2VectorRegl(DynInstPtr &inst,
+WidthDecoder<Impl>::widthOp2VectorRegl(const DynInstPtr &inst,
                                        uint8_t q, uint8_t size,
                                        uint8_t op1, uint8_t op2)
 {
@@ -701,7 +703,7 @@ WidthDecoder<Impl>::widthOp2VectorRegl(DynInstPtr &inst,
 
 template <class Impl>
 VecWidthCode
-WidthDecoder<Impl>::widthOp2VectorPair(DynInstPtr &inst,
+WidthDecoder<Impl>::widthOp2VectorPair(const DynInstPtr &inst,
                                        uint8_t q, uint8_t size,
                                        uint8_t op1, uint8_t op2)
 {

@@ -48,9 +48,7 @@
 #include <limits>
 #include <vector>
 
-#include "arch/generic/vec_reg.hh" /// MPINHO 5-mar-2019 ///
 #include "base/logging.hh"
-#include "base/resolution.hh" /// MPINHO 5-mar-2019 ///
 #include "cpu/o3/fu_pool.hh"
 #include "cpu/o3/inst_queue.hh"
 #include "debug/IQ.hh"
@@ -811,16 +809,6 @@ InstructionQueue<Impl>::insertBarrier(const DynInstPtr &barr_inst)
 
     insertNonSpec(barr_inst);
 }
-
-/// MPINHO 29-jul-2019 BEGIN ///
-template <class Impl>
-void
-InstructionQueue<Impl>::generateWidthInfo(DynInstPtr &new_inst)
-{
-    widthDecoder.addWidthInfo(new_inst);
-}
-/// MPINHO 29-jul-2019 END ///
-
 
 template <class Impl>
 typename Impl::DynInstPtr
@@ -1724,6 +1712,12 @@ InstructionQueue<Impl>::addIfReady(const DynInstPtr &inst)
         DPRINTF(IQ, "Instruction is ready to issue, putting it onto "
                 "the ready list, PC %s opclass:%i [sn:%lli].\n",
                 inst->pcState(), op_class, inst->seqNum);
+
+        /// MPINHO 07-aug-2019 BEGIN ///
+        // As non-memory instruction is ready to issue, generate width
+        // information.
+        widthDecoder.addWidthInfo(inst);
+        /// MPINHO 07-aug-2019 END ///
 
         readyInsts[op_class].push(inst);
 

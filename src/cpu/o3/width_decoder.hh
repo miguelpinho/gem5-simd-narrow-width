@@ -78,30 +78,30 @@ class WidthDecoder
     void setIQ(InstructionQueue<Impl> *iq_ptr);
 
     /** Return width mask of a vector instruction. */
-    VecWidthCode vecInstWidthMask(DynInstPtr &inst);
+    VecWidthCode vecInstWidthMask(const DynInstPtr &inst);
 
     /** Return width maks of one of the vector source registers. */
     VecWidthCode
-    vecSrcRegWidthMask(DynInstPtr &inst, uint8_t q, uint8_t size,
+    vecSrcRegWidthMask(const DynInstPtr &inst, uint8_t q, uint8_t size,
                        uint8_t op);
 
     /** Returns the width information for a given instruction. */
-    void addWidthInfo(DynInstPtr &inst);
+    void addWidthInfo(const DynInstPtr &inst);
 
     /** Returns true if vector instruction is of type that can be fused. */
-    bool isFuseVecType(DynInstPtr &inst);
+    bool isFuseVecType(const DynInstPtr &inst);
 
     /** Returns true if the two instructions are compatible for fuse. */
-    bool canFuseInst(DynInstPtr &inst1, DynInstPtr &inst2);
+    bool canFuseInst(const DynInstPtr &inst1, const DynInstPtr &inst2);
 
 
-    VecWidthCode widthOp2VectorRegl(DynInstPtr &inst,
+    VecWidthCode widthOp2VectorRegl(const DynInstPtr &inst,
                                     uint8_t q, uint8_t size,
                                     uint8_t op1, uint8_t op2);
-    VecWidthCode widthOp2VectorPair(DynInstPtr &inst,
+    VecWidthCode widthOp2VectorPair(const DynInstPtr &inst,
                                     uint8_t q, uint8_t size,
                                     uint8_t op1, uint8_t op2);
-    VecWidthCode widthOpAcrossVector(DynInstPtr &inst,
+    VecWidthCode widthOpAcrossVector(const DynInstPtr &inst,
                                      uint8_t q, uint8_t size,
                                      uint8_t op);
 
@@ -116,7 +116,7 @@ class WidthDecoder
 
     template <int Size, typename Elem>
     VecWidthCode
-    getWidthVecReg(DynInstPtr &inst, int nElem, int nBits,
+    getWidthVecReg(const DynInstPtr &inst, int nElem, int nBits,
                    uint8_t op);
 
     /// MPINHO 08-may-2019 BEGIN ///
@@ -145,9 +145,9 @@ class WidthDecoder
     /// MPINHO 13-may-2019 END ///
 
     /** Decode instruction width. */
-    WidthInfo decode(DynInstPtr &inst);
+    WidthInfo decode(const DynInstPtr &inst);
     /** Decode 3Same instruction width. */
-    WidthInfo decodeNeon3Same(DynInstPtr &inst);
+    WidthInfo decodeNeon3Same(const DynInstPtr &inst);
 };
 
 #endif // __CPU_O3_WIDTH_DECODER_BOARD_HH__
