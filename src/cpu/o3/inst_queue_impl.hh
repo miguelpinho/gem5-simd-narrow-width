@@ -1052,6 +1052,13 @@ InstructionQueue<Impl>::scheduleReadyInsts()
 
             order_it = listOrder.erase(order_it);
             statIssuedInstType[tid][op_class]++;
+            /// MPINHO 30-jul-2019 BEGIN ///
+            WidthClass width_class = issuing_inst->getWidthClass();
+            statIssuedWidthClass[static_cast<int>(width_class)]++;
+            if (issuing_inst->isVector())
+                statIssuedVecElemSize[static_cast<int>(width_class)]++;
+            /// MPINHO 30-jul-2019 BEGIN ///
+
 
             /// MPINHO 12-aug-2019 BEGIN ///
             // Fuse algorithm:
@@ -1063,10 +1070,13 @@ InstructionQueue<Impl>::scheduleReadyInsts()
 
                 // Fuseable inst found: trace, stat, fuseCap.
                 DPRINTF(IQFuse,
-                        "Found instruction \"%s\" suitable for fuse."
+                        "Found instruction \"%s\" suitable for fuse,"
+                        " of WidthClass: %s."
                         " This FU fuse capacity is: %u (FU idx: %d).\n",
                         issuing_inst->staticInst->
                             disassemble(issuing_inst->instAddr()),
+                        WidthClassStrings[
+                            static_cast<int>(width_class)],
                         fuseCap,
                         idx);
 
@@ -1123,16 +1133,28 @@ InstructionQueue<Impl>::scheduleReadyInsts()
                         if (widthDecoder.matchFuseType(issuing_inst,
                                                        fuse_candidate_inst))
                         {
-                            // Fuse opportunity. TODO: stat.
+                            WidthClass fuse_width_class
+                                = issuing_inst->getWidthClass();
+
+                            // Fuse opportunity found.
+                            statFuseChances[
+                                static_cast<int>(fuse_width_class)]++;
+
                             if (widthDecoder.canFuseInst(issuing_inst,
                                                          fuse_candidate_inst))
                             {
-                                // Fuse success. TODO: stat.
+                                // Fuse success.
+                                statFuseSuccess[
+                                    static_cast<int>(fuse_width_class)]++;
                                 DPRINTF(IQFuse,
-                                        "\tWill issued fused inst \"%s\".\n",
+                                        "\tWill issued fused inst \"%s\","
+                                        " with WidthClass: %S,\n",
                                         fuse_candidate_inst->staticInst->
                                             disassemble(
-                                                issuing_inst->instAddr()));
+                                                issuing_inst->instAddr()),
+                                        WidthClassStrings[
+                                            static_cast<int>(
+                                                fuse_width_class)]);
 
                                 // Execute inst.
                                 Cycles fuse_op_latency =
@@ -1200,12 +1222,21 @@ InstructionQueue<Impl>::scheduleReadyInsts()
                                     fuse_order_it =
                                         listOrder.erase(fuse_order_it);
                                 }
+
                                 statIssuedInstType[tid][fuse_op_class]++;
+                                statIssuedWidthClass[
+                                    static_cast<int>(fuse_width_class)]++;
+                                if (fuse_candidate_inst->isVector())
+                                    statIssuedVecElemSize[
+                                        static_cast<int>(fuse_width_class)]++;
 
                                 // FIXME: Only one fuse inst can be issued per
                                 // opportunity.
                                 break;
                             } else {
+                                // Fuse opportunity lost due to width mismatch.
+                                statFuseFailNoMatch[
+                                    static_cast<int>(fuse_width_class)]++;
                                 DPRINTF(IQFuse,
                                         "\tIgnored inst \"%s\" due to width"
                                         " mismatch.\n",
