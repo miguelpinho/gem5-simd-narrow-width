@@ -131,6 +131,8 @@ FUPool::FUPool(const Params *p)
                     pipelined[(*j)->opClass] = false;
             }
 
+            fu->setFuseCap((*i)->fuseCap); /// MPINHO 07-aug-2019 ///
+
             numFU++;
 
             //  Add the appropriate number of copies of this FU to the list
@@ -237,6 +239,20 @@ FUPool::dump()
         cout << "\n";
     }
 }
+
+/// MPINHO 13-aug-2019 BEGIN ///
+unsigned
+FUPool::getFUFuseCap(int fu_idx)
+{
+    return funcUnits[fu_idx]->getFuseCap();
+}
+
+bool
+FUPool::hasCapability(int fu_idx, OpClass capability)
+{
+    return funcUnits[fu_idx]->provides(capability);
+}
+/// MPINHO 13-aug-2019 END ///
 
 bool
 FUPool::isDrained() const

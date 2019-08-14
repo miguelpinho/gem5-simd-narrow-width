@@ -170,6 +170,14 @@ class FUPool : public SimObject
         return pipelined[capability];
     }
 
+    /// MPINHO 13-aug-2019 BEGIN ///
+    /** Returns the fuse capability of a given FU. */
+    unsigned getFUFuseCap(int fu_idx);
+
+    /** Checks whether a giver FU has a capability. */
+    bool hasCapability(int fu_idx, OpClass capability);
+    /// MPINHO 13-aug-2019 END ///
+
     /** Have all the FUs drained? */
     bool isDrained() const;
 

@@ -64,10 +64,13 @@ class FUDesc : public SimObject
 {
   public:
     std::vector<OpDesc *> opDescList;
-    unsigned         number;
+    unsigned number;
+    unsigned fuseCap;
 
     FUDesc(const FUDescParams *p)
-        : SimObject(p), opDescList(p->opList), number(p->count) {};
+        : SimObject(p), opDescList(p->opList), number(p->count),
+          fuseCap(p->fuseCap)
+    {};
 };
 
 typedef std::vector<OpDesc *>::const_iterator OPDDiterator;
@@ -88,6 +91,7 @@ class FuncUnit
     std::array<unsigned, Num_OpClasses> opLatencies;
     std::array<bool, Num_OpClasses> pipelined;
     std::bitset<Num_OpClasses> capabilityList;
+    unsigned fuseCap; /// MPINHO 07-aug-2019 ///
 
   public:
     FuncUnit();
@@ -96,12 +100,14 @@ class FuncUnit
     std::string name;
 
     void addCapability(OpClass cap, unsigned oplat, bool pipelined);
+    void setFuseCap(unsigned _fuseCap);
 
     bool provides(OpClass capability);
     std::bitset<Num_OpClasses> capabilities();
 
     unsigned &opLatency(OpClass capability);
     bool isPipelined(OpClass capability);
+    unsigned getFuseCap();
 };
 
 #endif // __FU_POOL_HH__
