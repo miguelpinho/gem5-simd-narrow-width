@@ -50,7 +50,7 @@ WidthInfo::isFuseType()
 }
 
 bool
-WidthInfo::canFuse(WidthInfo &b, PackingCriteria packingCriteria)
+WidthInfo::matchType(WidthInfo &b)
 {
     if (width_class == WidthClass::NoInfo ||
         width_class == WidthClass::SimdNoPacking ||
@@ -62,6 +62,15 @@ WidthInfo::canFuse(WidthInfo &b, PackingCriteria packingCriteria)
     if (width_class != b.width_class) {
         return false;
     }
+
+    return true;
+}
+
+bool
+WidthInfo::canFuse(WidthInfo &b, PackingCriteria packingCriteria)
+{
+    if (!matchType(b))
+        return false;
 
     return packingCriteria(width_mask, b.width_mask);
 }

@@ -51,12 +51,13 @@
 
 #include "base/statistics.hh"
 #include "base/types.hh"
-#include "cpu/o3/dep_graph.hh"
 #include "cpu/inst_seq.hh"
+#include "cpu/o3/dep_graph.hh"
 #include "cpu/op_class.hh"
 #include "cpu/timebuf.hh"
 #include "enums/SMTQueuePolicy.hh"
 #include "sim/eventq.hh"
+#include "width_decoder.hh" /// MPINHO 12-aug-2019 ///
 
 struct DerivO3CPUParams;
 class FUPool;

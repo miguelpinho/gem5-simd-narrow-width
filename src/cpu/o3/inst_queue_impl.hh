@@ -52,7 +52,7 @@
 #include "cpu/o3/fu_pool.hh"
 #include "cpu/o3/inst_queue.hh"
 #include "debug/IQ.hh"
-#include "debug/SimdResolution.hh" /// MPINHO 3-mar-2019 ///
+#include "debug/IQFuse.hh" /// MPINHO 13-aug-2019 ///
 #include "enums/OpClass.hh"
 #include "enums/VecElemSize.hh" /// MPINHO 30-jul-2019 ///
 #include "enums/WidthClass.hh" /// MPINHO 29-jul-2019 ///

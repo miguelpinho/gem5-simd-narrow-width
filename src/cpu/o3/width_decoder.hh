@@ -89,11 +89,13 @@ class WidthDecoder
     void addWidthInfo(const DynInstPtr &inst);
 
     /** Returns true if vector instruction is of type that can be fused. */
-    bool isFuseVecType(const DynInstPtr &inst);
+    bool isFuseType(const DynInstPtr &inst);
+
+    /** Returns true if the two instructions are of compatible fuse types. */
+    bool matchFuseType(const DynInstPtr &inst1, const DynInstPtr &inst2);
 
     /** Returns true if the two instructions are compatible for fuse. */
     bool canFuseInst(const DynInstPtr &inst1, const DynInstPtr &inst2);
-
 
     VecWidthCode widthOp2VectorRegl(const DynInstPtr &inst,
                                     uint8_t q, uint8_t size,

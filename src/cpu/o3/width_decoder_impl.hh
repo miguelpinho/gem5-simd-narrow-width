@@ -260,9 +260,25 @@ WidthDecoder<Impl>::addWidthInfo(const DynInstPtr &inst)
 
 template <class Impl>
 bool
-WidthDecoder<Impl>::isFuseVecType(const DynInstPtr &inst)
+WidthDecoder<Impl>::isFuseType(const DynInstPtr &inst)
 {
     return inst->getWidth().isFuseType();
+}
+
+template <class Impl>
+bool
+WidthDecoder<Impl>::matchFuseType(const DynInstPtr &inst1,
+                                  const DynInstPtr &inst2)
+{
+    WidthInfo inst1_width = inst1->getWidth();
+    WidthInfo inst2_width = inst2->getWidth();
+
+    DPRINTF(WidthDecoder, "Checking if \"%s\" and \"%s\" match.\n",
+            inst1->staticInst->disassemble(inst1->instAddr()),
+            inst2->staticInst->disassemble(inst2->instAddr()));
+
+    // TODO: Use chosen packing.
+    return inst1_width.matchType(inst2_width);
 }
 
 template <class Impl>
@@ -273,7 +289,7 @@ WidthDecoder<Impl>::canFuseInst(const DynInstPtr &inst1,
     WidthInfo inst1_width = inst1->getWidth();
     WidthInfo inst2_width = inst2->getWidth();
 
-    DPRINTF(WidthDecoder, "Trying to fuse %s and %s.\n",
+    DPRINTF(WidthDecoder, "Trying to fuse \"%s\" and \"%s\".\n",
             inst1->staticInst->disassemble(inst1->instAddr()),
             inst2->staticInst->disassemble(inst2->instAddr()));
 

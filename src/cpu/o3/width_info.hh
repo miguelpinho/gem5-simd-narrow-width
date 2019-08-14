@@ -33,6 +33,7 @@ class WidthInfo {
         WidthClass getWidthClass() { return width_class; }
         VecElemSize getElemSize() { return elem_size; }
         bool isFuseType();
+        bool matchType(WidthInfo &b);
         bool canFuse(WidthInfo &b, PackingCriteria packingCriteria);
         std::string to_string();
 };
