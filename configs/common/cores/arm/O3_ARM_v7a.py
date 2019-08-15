@@ -32,60 +32,60 @@ from m5.objects import *
 # Simple ALU Instructions have a latency of 1
 class O3_ARM_v7a_Simple_Int(FUDesc):
     opList = [ OpDesc(opClass='IntAlu', opLat=1) ]
-    count = 2
+    count = 6
 
 # Complex ALU instructions have a variable latencies
 class O3_ARM_v7a_Complex_Int(FUDesc):
     opList = [ OpDesc(opClass='IntMult', opLat=3, pipelined=True),
                OpDesc(opClass='IntDiv', opLat=12, pipelined=False),
                OpDesc(opClass='IprAccess', opLat=3, pipelined=True) ]
-    count = 1
+    count = 2
 
 
 # Floating point and SIMD instructions
 class O3_ARM_v7a_FP(FUDesc):
-    opList = [ OpDesc(opClass='SimdAdd', opLat=4),
-               OpDesc(opClass='SimdAddAcc', opLat=4),
-               OpDesc(opClass='SimdAlu', opLat=4),
-               OpDesc(opClass='SimdCmp', opLat=4),
-               OpDesc(opClass='SimdCvt', opLat=3),
-               OpDesc(opClass='SimdMisc', opLat=3),
-               OpDesc(opClass='SimdMult',opLat=5),
-               OpDesc(opClass='SimdMultAcc',opLat=5),
-               OpDesc(opClass='SimdShift',opLat=3),
-               OpDesc(opClass='SimdShiftAcc', opLat=3),
+    opList = [ OpDesc(opClass='SimdAdd', opLat=2),
+               OpDesc(opClass='SimdAddAcc', opLat=2),
+               OpDesc(opClass='SimdAlu', opLat=2),
+               OpDesc(opClass='SimdCmp', opLat=2),
+               OpDesc(opClass='SimdCvt', opLat=2),
+               OpDesc(opClass='SimdMisc', opLat=2),
+               OpDesc(opClass='SimdMult',opLat=3),
+               OpDesc(opClass='SimdMultAcc',opLat=3),
+               OpDesc(opClass='SimdShift',opLat=2),
+               OpDesc(opClass='SimdShiftAcc', opLat=2),
                OpDesc(opClass='SimdSqrt', opLat=9),
-               OpDesc(opClass='SimdFloatAdd',opLat=5),
-               OpDesc(opClass='SimdFloatAlu',opLat=5),
+               OpDesc(opClass='SimdFloatAdd',opLat=3),
+               OpDesc(opClass='SimdFloatAlu',opLat=3),
                OpDesc(opClass='SimdFloatCmp', opLat=3),
                OpDesc(opClass='SimdFloatCvt', opLat=3),
                OpDesc(opClass='SimdFloatDiv', opLat=3),
                OpDesc(opClass='SimdFloatMisc', opLat=3),
-               OpDesc(opClass='SimdFloatMult', opLat=3),
-               OpDesc(opClass='SimdFloatMultAcc',opLat=5),
+               OpDesc(opClass='SimdFloatMult', opLat=4),
+               OpDesc(opClass='SimdFloatMultAcc',opLat=4),
                OpDesc(opClass='SimdFloatSqrt', opLat=9),
-               OpDesc(opClass='FloatAdd', opLat=5),
-               OpDesc(opClass='FloatCmp', opLat=5),
-               OpDesc(opClass='FloatCvt', opLat=5),
+               OpDesc(opClass='FloatAdd', opLat=3),
+               OpDesc(opClass='FloatCmp', opLat=3),
+               OpDesc(opClass='FloatCvt', opLat=3),
                OpDesc(opClass='FloatDiv', opLat=9, pipelined=False),
                OpDesc(opClass='FloatSqrt', opLat=33, pipelined=False),
                OpDesc(opClass='FloatMult', opLat=4),
-               OpDesc(opClass='FloatMultAcc', opLat=5),
+               OpDesc(opClass='FloatMultAcc', opLat=4),
                OpDesc(opClass='FloatMisc', opLat=3) ]
-    count = 3
-    # count = 2
+    count = 4
+    fuseCap = 1
 
 
 # Load/Store Units
 class O3_ARM_v7a_Load(FUDesc):
     opList = [ OpDesc(opClass='MemRead',opLat=2),
                OpDesc(opClass='FloatMemRead',opLat=2) ]
-    count = 1
+    count = 2
 
 class O3_ARM_v7a_Store(FUDesc):
     opList = [ OpDesc(opClass='MemWrite',opLat=2),
                OpDesc(opClass='FloatMemWrite',opLat=2) ]
-    count = 1
+    count = 2
 
 # Functional Units for this CPU
 class O3_ARM_v7a_FUP(FUPool):
@@ -104,8 +104,8 @@ class O3_ARM_v7a_BP(BiModeBP):
     instShiftAmt = 2
 
 class O3_ARM_v7a_3(DerivO3CPU):
-    LQEntries = 16
-    SQEntries = 16
+    LQEntries = 32
+    SQEntries = 32
     LSQDepCheckShift = 0
     LFSTSize = 1024
     SSITSize = 1024
@@ -119,19 +119,15 @@ class O3_ARM_v7a_3(DerivO3CPU):
     iewToRenameDelay = 1
     commitToRenameDelay = 1
     commitToIEWDelay = 1
-    # fetchWidth = 3
-    fetchWidth = 4
-    # fetchBufferSize = 16
+    fetchWidth = 8
     fetchBufferSize = 32
     fetchToDecodeDelay = 3
-    # decodeWidth = 3
-    decodeWidth = 4
+    decodeWidth = 8
     decodeToRenameDelay = 2
-    # renameWidth = 3
-    renameWidth = 4
+    renameWidth = 8
     renameToIEWDelay = 1
     issueToExecuteDelay = 1
-    dispatchWidth = 6
+    dispatchWidth = 8
     issueWidth = 8
     wbWidth = 8
     fuPool = O3_ARM_v7a_FUP()
@@ -142,27 +138,24 @@ class O3_ARM_v7a_3(DerivO3CPU):
     trapLatency = 13
     backComSize = 5
     forwardComSize = 5
-    numPhysIntRegs = 128
-    numPhysFloatRegs = 192
-    # numPhysVecRegs = 48
-    numPhysVecRegs = 68
-    # numIQEntries = 32
-    numIQEntries = 42
-    # numROBEntries = 40
-    numROBEntries = 60
+    numPhysIntRegs = 256
+    numPhysFloatRegs = 256
+    numPhysVecRegs = 256
+    numIQEntries = 64
+    numROBEntries = 192
 
     switched_out = False
     branchPred = O3_ARM_v7a_BP()
 
 # Instruction Cache
 class O3_ARM_v7a_ICache(Cache):
-    tag_latency = 1
-    data_latency = 1
-    response_latency = 1
-    mshrs = 2
+    tag_latency = 2
+    data_latency = 2
+    response_latency = 2
+    mshrs = 8
     tgts_per_mshr = 8
     size = '32kB'
-    assoc = 2
+    assoc = 8
     is_read_only = True
     # Writeback clean lines as well
     writeback_clean = True
@@ -172,10 +165,10 @@ class O3_ARM_v7a_DCache(Cache):
     tag_latency = 2
     data_latency = 2
     response_latency = 2
-    mshrs = 6
+    mshrs = 8
     tgts_per_mshr = 8
     size = '32kB'
-    assoc = 2
+    assoc = 8
     write_buffers = 16
     # Consider the L2 a victim cache also for clean lines
     writeback_clean = True
@@ -197,13 +190,30 @@ class O3_ARM_v7aWalkCache(Cache):
 
 # L2 Cache
 class O3_ARM_v7aL2(Cache):
-    tag_latency = 12
-    data_latency = 12
-    response_latency = 12
+    tag_latency = 15
+    data_latency = 15
+    response_latency = 15
     mshrs = 16
     tgts_per_mshr = 8
-    size = '1MB'
+    size = '256kB'
     assoc = 16
+    write_buffers = 8
+    prefetch_on_access = True
+    clusivity = 'mostly_excl'
+    # Simple stride prefetcher
+    prefetcher = StridePrefetcher(degree=8, latency = 1)
+    tags = BaseSetAssoc()
+    repl_policy = RandomRP()
+
+# L3 Cache
+class O3_ARM_v7aL3(Cache):
+    tag_latency = 20
+    data_latency = 20
+    response_latency = 20
+    mshrs = 20
+    tgts_per_mshr = 8
+    size = '8MB'
+    assoc = 8
     write_buffers = 8
     prefetch_on_access = True
     clusivity = 'mostly_excl'
