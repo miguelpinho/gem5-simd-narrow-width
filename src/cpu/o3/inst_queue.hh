@@ -51,12 +51,13 @@
 
 #include "base/statistics.hh"
 #include "base/types.hh"
-#include "cpu/o3/dep_graph.hh"
 #include "cpu/inst_seq.hh"
+#include "cpu/o3/dep_graph.hh"
 #include "cpu/op_class.hh"
 #include "cpu/timebuf.hh"
 #include "enums/SMTQueuePolicy.hh"
 #include "sim/eventq.hh"
+#include "width_decoder.hh" /// MPINHO 12-aug-2019 ///
 
 struct DerivO3CPUParams;
 class FUPool;
@@ -540,18 +541,32 @@ class InstructionQueue
     /** Number of times the FU was busy per instruction issued. */
     Stats::Formula fuBusyRate;
 
-    /// MPINHO 18-mar-2019 BEGIN ///
-    /* Number of second vector instructions found for fuse. */
-    Stats::Scalar numFuseVecChances;
-    /* Number of vector fuse fails due to width unmatch. */
-    Stats::Scalar numFuseVecFailNoMatch;
-    /* Number of vector fuse fails due to unavailable proxy ALU. */
-    Stats::Scalar numFuseVecFailNoALU;
-    /* Number of vector fuse successes. */
-    Stats::Scalar numFuseVecSuccess;
-    /// MPINHO 18-mar-2019 END ///
+    /// MPINHO 30-jul-2019 BEGIN ///
+    /** Number of instructions issued by width class. */
+    Stats::Vector statIssuedWidthClass;
+    /** Number of vector instructions issued by elem size. */
+    Stats::Vector statIssuedVecElemSize;
+    /** Number of second instructions found for fuse. */
+    Stats::Vector statFuseChances;
+    Stats::Formula statFuseChancesNorm;
+    Stats::Formula statFuseChancesNormTotal;
+    /** Number of fuse fails due to width unmatch. */
+    Stats::Vector statFuseFailNoMatch;
+    Stats::Formula statFuseFailNoMatchNorm;
+    Stats::Formula statFuseFailNoMatchNormTotal;
+    /** Number of fuse fails due to unavailable proxy ALU. */
+    Stats::Vector statFuseFailNoALU;
+    Stats::Formula statFuseFailNoALUNorm;
+    Stats::Formula statFuseFailNoALUNormTotal;
+    /** Number of fuse successes. */
+    Stats::Vector statFuseSuccess;
+    Stats::Formula statFuseSuccessNorm;
+    Stats::Formula statFuseSuccessNormTotal;
+    /// MPTODO ///
+    /* Number of cycles vector instructions are issued. */
     Stats::Scalar cyclesVecActive;
-    /// MPINHO 18-mar-2019 END ///
+    /// MPINHO 30-jul-2019 END ///
+
    public:
     Stats::Scalar intInstQueueReads;
     Stats::Scalar intInstQueueWrites;

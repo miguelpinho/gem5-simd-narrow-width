@@ -46,6 +46,7 @@ FuncUnit::FuncUnit()
     opLatencies.fill(0);
     pipelined.fill(false);
     capabilityList.reset();
+    fuseCap = 0; /// MPINHO 07-aug-2019 ///
 }
 
 
@@ -59,6 +60,7 @@ FuncUnit::FuncUnit(const FuncUnit &fu)
     }
 
     capabilityList = fu.capabilityList;
+    fuseCap = fu.fuseCap; /// MPINHO 07-aug-2019 ///
 }
 
 
@@ -73,6 +75,14 @@ FuncUnit::addCapability(OpClass cap, unsigned oplat, bool pipeline)
     opLatencies[cap] = oplat;
     pipelined[cap] = pipeline;
 }
+
+/// MPINHO 07-aug-2019 BEGIN ///
+void
+FuncUnit::setFuseCap(unsigned _fuseCap)
+{
+    fuseCap = _fuseCap;
+}
+/// MPINHO 07-aug-2019 END ///
 
 bool
 FuncUnit::provides(OpClass capability)
@@ -97,6 +107,14 @@ FuncUnit::isPipelined(OpClass capability)
 {
     return pipelined[capability];
 }
+
+/// MPINHO 12-aug-2019 BEGIN ///
+unsigned
+FuncUnit::getFuseCap()
+{
+    return fuseCap;
+}
+/// MPINHO 12-aug-2019 END ///
 
 ////////////////////////////////////////////////////////////////////////////
 //

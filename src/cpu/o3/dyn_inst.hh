@@ -48,11 +48,14 @@
 
 #include "arch/isa_traits.hh"
 #include "config/the_isa.hh"
-#include "cpu/o3/cpu.hh"
-#include "cpu/o3/isa_specific.hh"
 #include "cpu/base_dyn_inst.hh"
 #include "cpu/inst_seq.hh"
+#include "cpu/o3/cpu.hh"
+#include "cpu/o3/isa_specific.hh"
+#include "cpu/o3/width_info.hh"
 #include "cpu/reg_class.hh"
+#include "enums/VecElemSize.hh" /// MPINHO 30-jul-2019 ///
+#include "enums/WidthClass.hh" /// MPINHO 29-jul-2019 ///
 
 class Packet;
 
@@ -444,6 +447,26 @@ class BaseO3DynInst : public BaseDynInst<Impl>
         panic("MIPS MT not defined for O3 CPU.\n");
     }
 #endif
+
+/// MPINHO 29-jul-2019 BEGIN ///
+protected:
+
+    WidthInfo width;
+
+public:
+
+    /** Set the instruction width information. */
+    void setWidth(WidthInfo _width) { width = _width; }
+
+    /** Get the instruction width information. */
+    WidthInfo getWidth() { return width; }
+
+    /** Get the instruction width class. */
+    WidthClass getWidthClass() { return width.getWidthClass(); }
+
+    /** Get the instruction elem size. */
+    VecElemSize getElemSize() { return width.getElemSize(); }
+/// MPINHO 29-jul-2019 END ///
 };
 
 #endif // __CPU_O3_ALPHA_DYN_INST_HH__

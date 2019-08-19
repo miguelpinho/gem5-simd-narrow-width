@@ -185,7 +185,7 @@ WidthDecoder<Impl>::init(DerivO3CPUParams *params)
  */
 template <class Impl>
 VecWidthCode
-WidthDecoder<Impl>::vecSrcRegWidthMask(DynInstPtr &inst,
+WidthDecoder<Impl>::vecSrcRegWidthMask(const DynInstPtr &inst,
                                        uint8_t q, uint8_t size,
                                        uint8_t op)
 {
@@ -218,8 +218,8 @@ WidthDecoder<Impl>::vecSrcRegWidthMask(DynInstPtr &inst,
 template <class Impl>
 template <int Size, typename Elem>
 VecWidthCode
-WidthDecoder<Impl>::getWidthVecReg(DynInstPtr &inst, int nElem, int nBits,
-                                   uint8_t op)
+WidthDecoder<Impl>::getWidthVecReg(const DynInstPtr &inst, int nElem,
+                                   int nBits, uint8_t op)
 {
     assert(nElem <= Size);
 
@@ -246,25 +246,50 @@ WidthDecoder<Impl>::getWidthVecReg(DynInstPtr &inst, int nElem, int nBits,
 }
 
 template <class Impl>
-bool
-WidthDecoder<Impl>::isFuseVecType(DynInstPtr &inst)
+void
+WidthDecoder<Impl>::addWidthInfo(const DynInstPtr &inst)
 {
-    WidthInfo inst_width = decode(inst);
+    inst->setWidth(decode(inst));
 
-    return inst_width.isFuseType();
+    DPRINTF(WidthDecoder, "Instruction \"%s\" was assigned"
+            " width information: \"%s\".\n",
+            inst->staticInst->disassemble(
+                inst->instAddr()),
+            inst->getWidth().to_string());
 }
 
 template <class Impl>
 bool
-WidthDecoder<Impl>::canFuseVecInst(DynInstPtr &inst1, DynInstPtr &inst2)
+WidthDecoder<Impl>::isFuseType(const DynInstPtr &inst)
 {
-    if (!inst1->isVector() || !inst2->isVector()) {
-        panic("Trying to fuse non-vector operations.");
-    }
+    return inst->getWidth().isFuseType();
+}
 
-    WidthInfo inst1_width = decode(inst1), inst2_width = decode(inst2);
+template <class Impl>
+bool
+WidthDecoder<Impl>::matchFuseType(const DynInstPtr &inst1,
+                                  const DynInstPtr &inst2)
+{
+    WidthInfo inst1_width = inst1->getWidth();
+    WidthInfo inst2_width = inst2->getWidth();
 
-    DPRINTF(WidthDecoder, "Trying to fuse %s and %s.\n",
+    DPRINTF(WidthDecoder, "Checking if \"%s\" and \"%s\" match.\n",
+            inst1->staticInst->disassemble(inst1->instAddr()),
+            inst2->staticInst->disassemble(inst2->instAddr()));
+
+    // TODO: Use chosen packing.
+    return inst1_width.matchType(inst2_width);
+}
+
+template <class Impl>
+bool
+WidthDecoder<Impl>::canFuseInst(const DynInstPtr &inst1,
+                                const DynInstPtr &inst2)
+{
+    WidthInfo inst1_width = inst1->getWidth();
+    WidthInfo inst2_width = inst2->getWidth();
+
+    DPRINTF(WidthDecoder, "Trying to fuse \"%s\" and \"%s\".\n",
             inst1->staticInst->disassemble(inst1->instAddr()),
             inst2->staticInst->disassemble(inst2->instAddr()));
 
@@ -274,7 +299,7 @@ WidthDecoder<Impl>::canFuseVecInst(DynInstPtr &inst1, DynInstPtr &inst2)
 
 template <class Impl>
 WidthInfo
-WidthDecoder<Impl>::decode(DynInstPtr &inst)
+WidthDecoder<Impl>::decode(const DynInstPtr &inst)
 {
     using namespace ArmISAInst;
 
@@ -426,7 +451,7 @@ WidthDecoder<Impl>::decode(DynInstPtr &inst)
 
 template <class Impl>
 WidthInfo
-WidthDecoder<Impl>::decodeNeon3Same(DynInstPtr &inst)
+WidthDecoder<Impl>::decodeNeon3Same(const DynInstPtr &inst)
 {
     using namespace ArmISAInst;
 
@@ -448,7 +473,8 @@ WidthDecoder<Impl>::decodeNeon3Same(DynInstPtr &inst)
                         inst->staticInst->disassemble(inst->instAddr()),
                         size, q);
                 return(WidthInfo(WidthClass::SimdPackingAlu,
-                                widthOp2VectorRegl(inst, q, size, 2, 3)));
+                                 widthOp2VectorRegl(inst, q, size, 2, 3),
+                                 size));
             }
             break;
         case 0x01:
@@ -459,7 +485,8 @@ WidthDecoder<Impl>::decodeNeon3Same(DynInstPtr &inst)
                         inst->staticInst->disassemble(inst->instAddr()),
                         size, q);
                 return(WidthInfo(WidthClass::SimdPackingAlu,
-                                widthOp2VectorRegl(inst, q, size, 2, 3)));
+                                widthOp2VectorRegl(inst, q, size, 2, 3),
+                                size));
             }
             break;
         case 0x02:
@@ -470,7 +497,8 @@ WidthDecoder<Impl>::decodeNeon3Same(DynInstPtr &inst)
                         inst->staticInst->disassemble(inst->instAddr()),
                         size, q);
                 return(WidthInfo(WidthClass::SimdPackingAlu,
-                                widthOp2VectorRegl(inst, q, size, 2, 3)));
+                                 widthOp2VectorRegl(inst, q, size, 2, 3),
+                                 size));
             }
             break;
         case 0x04:
@@ -481,7 +509,8 @@ WidthDecoder<Impl>::decodeNeon3Same(DynInstPtr &inst)
                         inst->staticInst->disassemble(inst->instAddr()),
                         size, q);
                 return(WidthInfo(WidthClass::SimdPackingAlu,
-                                widthOp2VectorRegl(inst, q, size, 2, 3)));
+                                widthOp2VectorRegl(inst, q, size, 2, 3),
+                                size));
             }
             break;
         case 0x05:
@@ -492,7 +521,8 @@ WidthDecoder<Impl>::decodeNeon3Same(DynInstPtr &inst)
                         inst->staticInst->disassemble(inst->instAddr()),
                         size, q);
                 return(WidthInfo(WidthClass::SimdPackingAlu,
-                                widthOp2VectorRegl(inst, q, size, 2, 3)));
+                                 widthOp2VectorRegl(inst, q, size, 2, 3),
+                                 size));
             }
             break;
         case 0x06:
@@ -504,7 +534,8 @@ WidthDecoder<Impl>::decodeNeon3Same(DynInstPtr &inst)
                         inst->staticInst->disassemble(inst->instAddr()),
                         size, q);
                 return(WidthInfo(WidthClass::SimdPackingAlu,
-                                widthOp2VectorRegl(inst, q, size, 2, 3)));
+                                 widthOp2VectorRegl(inst, q, size, 2, 3),
+                                 size));
             }
             break;
         case 0x07:
@@ -516,7 +547,8 @@ WidthDecoder<Impl>::decodeNeon3Same(DynInstPtr &inst)
                         inst->staticInst->disassemble(inst->instAddr()),
                         size, q);
                 return(WidthInfo(WidthClass::SimdPackingAlu,
-                                widthOp2VectorRegl(inst, q, size, 2, 3)));
+                                 widthOp2VectorRegl(inst, q, size, 2, 3),
+                                 size));
             }
             break;
         case 0x0c:
@@ -527,7 +559,8 @@ WidthDecoder<Impl>::decodeNeon3Same(DynInstPtr &inst)
                         inst->staticInst->disassemble(inst->instAddr()),
                         size, q);
                 return(WidthInfo(WidthClass::SimdPackingAlu,
-                                widthOp2VectorRegl(inst, q, size, 2, 3)));
+                                 widthOp2VectorRegl(inst, q, size, 2, 3),
+                                 size));
             }
             break;
         case 0x0d:
@@ -538,7 +571,8 @@ WidthDecoder<Impl>::decodeNeon3Same(DynInstPtr &inst)
                         inst->staticInst->disassemble(inst->instAddr()),
                         size, q);
                 return(WidthInfo(WidthClass::SimdPackingAlu,
-                                widthOp2VectorRegl(inst, q, size, 2, 3)));
+                                 widthOp2VectorRegl(inst, q, size, 2, 3),
+                                 size));
             }
             break;
         case 0x0e:
@@ -549,7 +583,8 @@ WidthDecoder<Impl>::decodeNeon3Same(DynInstPtr &inst)
                         inst->staticInst->disassemble(inst->instAddr()),
                         size, q);
                 return(WidthInfo(WidthClass::SimdPackingAlu,
-                                widthOp2VectorRegl(inst, q, size, 2, 3)));
+                                 widthOp2VectorRegl(inst, q, size, 2, 3),
+                                 size));
             }
             break;
         case 0x0f:
@@ -560,7 +595,8 @@ WidthDecoder<Impl>::decodeNeon3Same(DynInstPtr &inst)
                         inst->staticInst->disassemble(inst->instAddr()),
                         size, q);
                 return(WidthInfo(WidthClass::SimdPackingAlu,
-                                widthOp2VectorRegl(inst, q, size, 2, 3)));
+                                 widthOp2VectorRegl(inst, q, size, 2, 3),
+                                 size));
             }
             break;
         case 0x10:
@@ -572,7 +608,8 @@ WidthDecoder<Impl>::decodeNeon3Same(DynInstPtr &inst)
                         inst->staticInst->disassemble(inst->instAddr()),
                         size, q);
                 return(WidthInfo(WidthClass::SimdPackingAlu,
-                                widthOp2VectorRegl(inst, q, size, 2, 3)));
+                                 widthOp2VectorRegl(inst, q, size, 2, 3),
+                                 size));
             }
             break;
         case 0x11:
@@ -584,7 +621,8 @@ WidthDecoder<Impl>::decodeNeon3Same(DynInstPtr &inst)
                             inst->staticInst->disassemble(inst->instAddr()),
                             size, q);
                     return(WidthInfo(WidthClass::SimdPackingAlu,
-                                    widthOp2VectorRegl(inst, q, size, 2, 3)));
+                                     widthOp2VectorRegl(inst, q, size, 2, 3),
+                                     size));
                 } else {
                     // CmtstDX, CmtstQX
                     DPRINTF(WidthDecoderDecode,
@@ -592,7 +630,8 @@ WidthDecoder<Impl>::decodeNeon3Same(DynInstPtr &inst)
                             inst->staticInst->disassemble(inst->instAddr()),
                             size, q);
                     return(WidthInfo(WidthClass::SimdPackingAlu,
-                                    widthOp2VectorRegl(inst, q, size, 2, 3)));
+                                     widthOp2VectorRegl(inst, q, size, 2, 3),
+                                     size));
                 }
             }
             break;
@@ -605,7 +644,8 @@ WidthDecoder<Impl>::decodeNeon3Same(DynInstPtr &inst)
                         inst->staticInst->disassemble(inst->instAddr()),
                         size, q);
                 return(WidthInfo(WidthClass::SimdPackingMult,
-                                 widthOp2VectorRegl(inst, q, size, 2, 3)));
+                                 widthOp2VectorRegl(inst, q, size, 2, 3),
+                                 size));
             }
             break;
         case 0x13:
@@ -616,7 +656,8 @@ WidthDecoder<Impl>::decodeNeon3Same(DynInstPtr &inst)
                         inst->staticInst->disassemble(inst->instAddr()),
                         size, q);
                 return(WidthInfo(WidthClass::SimdPackingMult,
-                                 widthOp2VectorRegl(inst, q, size, 2, 3)));
+                                 widthOp2VectorRegl(inst, q, size, 2, 3),
+                                 size));
             }
             break;
         case 0x14:
@@ -627,7 +668,8 @@ WidthDecoder<Impl>::decodeNeon3Same(DynInstPtr &inst)
                         inst->staticInst->disassemble(inst->instAddr()),
                         size, q);
                 return(WidthInfo(WidthClass::SimdPackingAlu,
-                                widthOp2VectorPair(inst, q, size, 2, 3)));
+                                 widthOp2VectorPair(inst, q, size, 2, 3),
+                                 size));
             }
             break;
         case 0x15:
@@ -638,7 +680,8 @@ WidthDecoder<Impl>::decodeNeon3Same(DynInstPtr &inst)
                         inst->staticInst->disassemble(inst->instAddr()),
                         size, q);
                 return(WidthInfo(WidthClass::SimdPackingAlu,
-                                widthOp2VectorPair(inst, q, size, 2, 3)));
+                                 widthOp2VectorPair(inst, q, size, 2, 3),
+                                 size));
             }
             break;
         case 0x17:
@@ -651,7 +694,8 @@ WidthDecoder<Impl>::decodeNeon3Same(DynInstPtr &inst)
                         inst->staticInst->disassemble(inst->instAddr()),
                         size, q);
                 return(WidthInfo(WidthClass::SimdPackingAlu,
-                                widthOp2VectorPair(inst, q, size, 2, 3)));
+                                 widthOp2VectorPair(inst, q, size, 2, 3),
+                                 size));
             }
             break;
     }
@@ -661,7 +705,7 @@ WidthDecoder<Impl>::decodeNeon3Same(DynInstPtr &inst)
 
 template <class Impl>
 WidthInfo
-WidthDecoder<Impl>::decodeNeon2RegMisc(DynInstPtr &inst)
+WidthDecoder<Impl>::decodeNeon2RegMisc(const DynInstPtr &inst)
 {
     using namespace ArmISAInst;
 
@@ -684,7 +728,7 @@ WidthDecoder<Impl>::decodeNeon2RegMisc(DynInstPtr &inst)
                         inst->staticInst->disassemble(inst->instAddr()),
                         size, q);
                 return(WidthInfo(WidthClass::SimdPackingAlu,
-                                widthOp1VectorRegl(inst, q, size, 2)));
+                                 widthOp1VectorRegl(inst, q, size, 2), size));
             }
             break;
         case 0x08:
@@ -695,7 +739,7 @@ WidthDecoder<Impl>::decodeNeon2RegMisc(DynInstPtr &inst)
                         inst->staticInst->disassemble(inst->instAddr()),
                         size, q);
                 return(WidthInfo(WidthClass::SimdPackingAlu,
-                                widthOp1VectorRegl(inst, q, size, 2)));
+                                 widthOp1VectorRegl(inst, q, size, 2), size));
             }
             break;
         case 0x09:
@@ -706,7 +750,7 @@ WidthDecoder<Impl>::decodeNeon2RegMisc(DynInstPtr &inst)
                         inst->staticInst->disassemble(inst->instAddr()),
                         size, q);
                 return(WidthInfo(WidthClass::SimdPackingAlu,
-                                widthOp1VectorRegl(inst, q, size, 2)));
+                                 widthOp1VectorRegl(inst, q, size, 2), size));
             }
             break;
         case 0x0a:
@@ -717,7 +761,7 @@ WidthDecoder<Impl>::decodeNeon2RegMisc(DynInstPtr &inst)
                         inst->staticInst->disassemble(inst->instAddr()),
                         size, q);
                 return(WidthInfo(WidthClass::SimdPackingAlu,
-                                widthOp1VectorRegl(inst, q, size, 2)));
+                                 widthOp1VectorRegl(inst, q, size, 2), size));
             }
             break;
         case 0x0b:
@@ -728,7 +772,7 @@ WidthDecoder<Impl>::decodeNeon2RegMisc(DynInstPtr &inst)
                         inst->staticInst->disassemble(inst->instAddr()),
                         size, q);
                 return(WidthInfo(WidthClass::SimdPackingAlu,
-                                widthOp1VectorRegl(inst, q, size, 2)));
+                                 widthOp1VectorRegl(inst, q, size, 2), size));
             }
             break;
         case 0x24:
@@ -739,7 +783,7 @@ WidthDecoder<Impl>::decodeNeon2RegMisc(DynInstPtr &inst)
                         inst->staticInst->disassemble(inst->instAddr()),
                         size, q);
                 return(WidthInfo(WidthClass::SimdPackingAlu,
-                                widthOp1VectorRegl(inst, q, size, 2)));
+                                 widthOp1VectorRegl(inst, q, size, 2), size));
             }
             break;
         case 0x28:
@@ -750,7 +794,7 @@ WidthDecoder<Impl>::decodeNeon2RegMisc(DynInstPtr &inst)
                         inst->staticInst->disassemble(inst->instAddr()),
                         size, q);
                 return(WidthInfo(WidthClass::SimdPackingAlu,
-                                widthOp1VectorRegl(inst, q, size, 2)));
+                                 widthOp1VectorRegl(inst, q, size, 2), size));
             }
             break;
         case 0x29:
@@ -761,7 +805,7 @@ WidthDecoder<Impl>::decodeNeon2RegMisc(DynInstPtr &inst)
                         inst->staticInst->disassemble(inst->instAddr()),
                         size, q);
                 return(WidthInfo(WidthClass::SimdPackingAlu,
-                                widthOp1VectorRegl(inst, q, size, 2)));
+                                 widthOp1VectorRegl(inst, q, size, 2), size));
             }
             break;
         case 0x2b:
@@ -772,7 +816,7 @@ WidthDecoder<Impl>::decodeNeon2RegMisc(DynInstPtr &inst)
                         inst->staticInst->disassemble(inst->instAddr()),
                         size, q);
                 return(WidthInfo(WidthClass::SimdPackingAlu,
-                                widthOp1VectorRegl(inst, q, size, 2)));
+                                 widthOp1VectorRegl(inst, q, size, 2), size));
             }
             break;
     }
@@ -782,7 +826,7 @@ WidthDecoder<Impl>::decodeNeon2RegMisc(DynInstPtr &inst)
 
 template <class Impl>
 VecWidthCode
-WidthDecoder<Impl>::widthOp1VectorRegl(DynInstPtr &inst,
+WidthDecoder<Impl>::widthOp1VectorRegl(const DynInstPtr &inst,
                                        uint8_t q, uint8_t size,
                                        uint8_t op1)
 {
@@ -799,7 +843,7 @@ WidthDecoder<Impl>::widthOp1VectorRegl(DynInstPtr &inst,
 
 template <class Impl>
 VecWidthCode
-WidthDecoder<Impl>::widthOp2VectorRegl(DynInstPtr &inst,
+WidthDecoder<Impl>::widthOp2VectorRegl(const DynInstPtr &inst,
                                        uint8_t q, uint8_t size,
                                        uint8_t op1, uint8_t op2)
 {
@@ -818,7 +862,7 @@ WidthDecoder<Impl>::widthOp2VectorRegl(DynInstPtr &inst,
 
 template <class Impl>
 VecWidthCode
-WidthDecoder<Impl>::widthOp2VectorPair(DynInstPtr &inst,
+WidthDecoder<Impl>::widthOp2VectorPair(const DynInstPtr &inst,
                                        uint8_t q, uint8_t size,
                                        uint8_t op1, uint8_t op2)
 {

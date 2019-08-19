@@ -72,6 +72,11 @@ class WidthClass(ScopedEnum):
              'SimdPackingAdd', 'SimdPackingMult' ]
 ### MPINHO 26-jul-2019 END ###
 
+### MPINHO 30-jul-2019 BEGIN ###
+class VecElemSize(ScopedEnum):
+    vals = [ 'Unknown', 'Bit8', 'Bit16', 'Bit32', 'Bit64' ]
+### MPINHO 30-jul-2019 END ###
+
 class DerivO3CPU(BaseCPU):
     type = 'DerivO3CPU'
     cxx_header = 'cpu/o3/deriv.hh'

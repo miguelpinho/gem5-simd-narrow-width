@@ -66,6 +66,7 @@ if 'O3CPU' in env['CPU_MODELS']:
     DebugFlag('CommitRate')
     DebugFlag('IEW')
     DebugFlag('IQ')
+    DebugFlag('IQFuse') ### MPINHO 13-aug-2019
     DebugFlag('LSQ')
     DebugFlag('LSQUnit')
     DebugFlag('MemDepUnit')
@@ -74,7 +75,6 @@ if 'O3CPU' in env['CPU_MODELS']:
     DebugFlag('Rename')
     DebugFlag('RegFileUsage') ### MPINHO 2-april-2019
     DebugFlag('Scoreboard')
-    DebugFlag('SimdResolution') ### MPINHO 3-mar-2019
     DebugFlag('StoreSet')
     DebugFlag('WidthDecoder') ### MPINHO 16-mar-2019
     DebugFlag('WidthDecoderDecode') ### MPINHO 24-jul-2019
@@ -84,6 +84,7 @@ if 'O3CPU' in env['CPU_MODELS']:
     CompoundFlag('O3CPUAll', [ 'Fetch', 'Decode', 'Rename', 'IEW', 'Commit',
         'IQ', 'ROB', 'FreeList', 'LSQ', 'LSQUnit', 'StoreSet', 'MemDepUnit',
         'DynInst', 'O3CPU', 'Activity', 'Scoreboard', 'Writeback' ])
+    CompoundFlag('IQAll', [ 'IQ', 'IQFuse' ])
     CompoundFlag('WidthDecoderAll', [ 'WidthDecoder', 'WidthDecoderDecode',
         'WidthDecoderWidth' ])
 
