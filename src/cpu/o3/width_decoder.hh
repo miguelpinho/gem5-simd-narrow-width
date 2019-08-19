@@ -97,6 +97,9 @@ class WidthDecoder
     /** Returns true if the two instructions are compatible for fuse. */
     bool canFuseInst(const DynInstPtr &inst1, const DynInstPtr &inst2);
 
+    VecWidthCode widthOp1VectorRegl(const DynInstPtr &inst,
+                                    uint8_t q, uint8_t size,
+                                    uint8_t op1);
     VecWidthCode widthOp2VectorRegl(const DynInstPtr &inst,
                                     uint8_t q, uint8_t size,
                                     uint8_t op1, uint8_t op2);
@@ -150,6 +153,8 @@ class WidthDecoder
     WidthInfo decode(const DynInstPtr &inst);
     /** Decode 3Same instruction width. */
     WidthInfo decodeNeon3Same(const DynInstPtr &inst);
+    /** Decode 2RegMisc instruction width. */
+    WidthInfo decodeNeon2RegMisc(const DynInstPtr &inst);
 };
 
 #endif // __CPU_O3_WIDTH_DECODER_BOARD_HH__
