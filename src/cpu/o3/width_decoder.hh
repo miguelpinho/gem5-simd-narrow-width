@@ -93,7 +93,11 @@ class WidthDecoder
 
     WidthInfo decode(DynInstPtr &inst);
     WidthInfo decodeNeon3Same(DynInstPtr &inst);
+    WidthInfo decodeNeon2RegMisc(DynInstPtr &inst);
 
+    VecWidthCode widthOp1VectorRegl(DynInstPtr &inst,
+                                    uint8_t q, uint8_t size,
+                                    uint8_t op1);
     VecWidthCode widthOp2VectorRegl(DynInstPtr &inst,
                                     uint8_t q, uint8_t size,
                                     uint8_t op1, uint8_t op2);

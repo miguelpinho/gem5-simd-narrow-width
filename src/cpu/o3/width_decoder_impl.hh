@@ -347,7 +347,7 @@ WidthDecoder<Impl>::decode(DynInstPtr &inst)
                                         " inst decoded: %s.\n",
                                         inst->staticInst->disassemble(
                                             inst->instAddr()));
-                                return(WidthInfo(WidthClass::NoInfo));
+                                return decodeNeon2RegMisc(inst);
                             } else if (bits(machInst, 20, 17) == 0x8) {
                                 // Neon AcrossLanes.
                                 DPRINTF(WidthDecoderDecode,
@@ -657,6 +657,144 @@ WidthDecoder<Impl>::decodeNeon3Same(DynInstPtr &inst)
     }
 
     return(WidthInfo(WidthClass::NoInfo));
+}
+
+template <class Impl>
+WidthInfo
+WidthDecoder<Impl>::decodeNeon2RegMisc(DynInstPtr &inst)
+{
+    using namespace ArmISAInst;
+
+    ArmISA::ExtMachInst machInst = inst->staticInst->machInst;
+
+    uint8_t q = bits(machInst, 30);
+    uint8_t u = bits(machInst, 29);
+    uint8_t size = bits(machInst, 23, 22);
+    uint8_t opcode = bits(machInst, 16, 12);
+
+    uint8_t size_q = (size << 1) | q;
+    uint8_t switchVal = opcode | ((u ? 1 : 0) << 5);
+
+    switch (switchVal) {
+        case 0x04:
+            if (size != 0x3) {
+                // ClsDX, ClsQX
+                DPRINTF(WidthDecoderDecode,
+                        "Neon CLS inst decoded: %s. Size: %d, Q: %d.\n",
+                        inst->staticInst->disassemble(inst->instAddr()),
+                        size, q);
+                return(WidthInfo(WidthClass::SimdPackingAlu,
+                                widthOp1VectorRegl(inst, q, size, 2)));
+            }
+            break;
+        case 0x08:
+            if (size_q != 0x6) {
+                // CmgtZeroDX, CmgtZeroQX
+                DPRINTF(WidthDecoderDecode,
+                        "Neon CMGT(zero) inst decoded: %s. Size: %d, Q: %d.\n",
+                        inst->staticInst->disassemble(inst->instAddr()),
+                        size, q);
+                return(WidthInfo(WidthClass::SimdPackingAlu,
+                                widthOp1VectorRegl(inst, q, size, 2)));
+            }
+            break;
+        case 0x09:
+            if (size_q != 0x6) {
+                // CmeqZeroDX, CmeqZeroQX
+                DPRINTF(WidthDecoderDecode,
+                        "Neon CMEQ(zero) inst decoded: %s. Size: %d, Q: %d.\n",
+                        inst->staticInst->disassemble(inst->instAddr()),
+                        size, q);
+                return(WidthInfo(WidthClass::SimdPackingAlu,
+                                widthOp1VectorRegl(inst, q, size, 2)));
+            }
+            break;
+        case 0x0a:
+            if (size_q != 0x6) {
+                // CmltZeroDX, CmltZeroQX
+                DPRINTF(WidthDecoderDecode,
+                        "Neon CMLT(zero) inst decoded: %s. Size: %d, Q: %d.\n",
+                        inst->staticInst->disassemble(inst->instAddr()),
+                        size, q);
+                return(WidthInfo(WidthClass::SimdPackingAlu,
+                                widthOp1VectorRegl(inst, q, size, 2)));
+            }
+            break;
+        case 0x0b:
+            if (size_q != 0x6) {
+                // AbsDX, AbsQX
+                DPRINTF(WidthDecoderDecode,
+                        "Neon ABS inst decoded: %s. Size: %d, Q: %d.\n",
+                        inst->staticInst->disassemble(inst->instAddr()),
+                        size, q);
+                return(WidthInfo(WidthClass::SimdPackingAlu,
+                                widthOp1VectorRegl(inst, q, size, 2)));
+            }
+            break;
+        case 0x24:
+            if (size != 0x3) {
+                // ClzDX, ClzQX
+                DPRINTF(WidthDecoderDecode,
+                        "Neon CLZ inst decoded: %s. Size: %d, Q: %d.\n",
+                        inst->staticInst->disassemble(inst->instAddr()),
+                        size, q);
+                return(WidthInfo(WidthClass::SimdPackingAlu,
+                                widthOp1VectorRegl(inst, q, size, 2)));
+            }
+            break;
+        case 0x28:
+            if (size_q != 0x6) {
+                // CmgeZeroDX, CmgeZeroQX
+                DPRINTF(WidthDecoderDecode,
+                        "Neon CMGE(zero) inst decoded: %s. Size: %d, Q: %d.\n",
+                        inst->staticInst->disassemble(inst->instAddr()),
+                        size, q);
+                return(WidthInfo(WidthClass::SimdPackingAlu,
+                                widthOp1VectorRegl(inst, q, size, 2)));
+            }
+            break;
+        case 0x29:
+            if (size_q != 0x6) {
+                // CmleZeroDX, CmleZeroQX
+                DPRINTF(WidthDecoderDecode,
+                        "Neon CMLE(zero) inst decoded: %s. Size: %d, Q: %d.\n",
+                        inst->staticInst->disassemble(inst->instAddr()),
+                        size, q);
+                return(WidthInfo(WidthClass::SimdPackingAlu,
+                                widthOp1VectorRegl(inst, q, size, 2)));
+            }
+            break;
+        case 0x2b:
+            if (size_q != 0x6) {
+                // NegDX, NegQX
+                DPRINTF(WidthDecoderDecode,
+                        "Neon NEG inst decoded: %s. Size: %d, Q: %d.\n",
+                        inst->staticInst->disassemble(inst->instAddr()),
+                        size, q);
+                return(WidthInfo(WidthClass::SimdPackingAlu,
+                                widthOp1VectorRegl(inst, q, size, 2)));
+            }
+            break;
+    }
+
+    return(WidthInfo(WidthClass::NoInfo));
+}
+
+template <class Impl>
+VecWidthCode
+WidthDecoder<Impl>::widthOp1VectorRegl(DynInstPtr &inst,
+                                       uint8_t q, uint8_t size,
+                                       uint8_t op1)
+{
+    VecWidthCode maskOp1;
+
+    maskOp1 = vecSrcRegWidthMask(inst, q, size, op1);
+
+    DPRINTF(WidthDecoderWidth, "Instruction with 1 vector operand (regular)"
+            " has width mask %s (eSize=%i).\n",
+            maskOp1.to_string(),
+            size);
+    return maskOp1;
 }
 
 template <class Impl>
