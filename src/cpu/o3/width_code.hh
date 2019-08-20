@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "arch/utility.hh"
+#include "cpu/func_unit_width.hh"
 
 /*
  * Class for vector width information encoding.
@@ -17,8 +18,6 @@
 class VecWidthCode
 {
     private:
-        static constexpr auto VecRegSizeBits = 128;
-
         int eBits;
         int nElem;
         std::vector<int> code;
@@ -32,7 +31,7 @@ class VecWidthCode
 
         ~VecWidthCode() {}
 
-        static int vectorSize() { return static_cast<int>(VecRegSizeBits); }
+        static int vectorSize() { return static_cast<int>(ScalarSizeBits); }
         int elemBits() { return eBits; }
         int numElem() { return nElem; }
 
@@ -63,8 +62,8 @@ class VecWidthCode
             return eBits == b.eBits && nElem == b.nElem;
         }
 
-        int count();
-        int max();
+        int totalWidth();
+        int maxWidth();
 
         std::string to_string();
 

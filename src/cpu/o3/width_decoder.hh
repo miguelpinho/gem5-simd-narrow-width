@@ -13,6 +13,7 @@
 #include "arch/types.hh"
 #include "base/statistics.hh"
 #include "base/types.hh"
+#include "cpu/func_unit_width.hh"
 #include "cpu/o3/packing_criteria.hh"
 #include "cpu/o3/width_code.hh"
 #include "cpu/o3/width_info.hh"
