@@ -380,7 +380,7 @@ WidthDecoder<Impl>::decode(const DynInstPtr &inst)
                                         " inst decoded: %s.\n",
                                         inst->staticInst->disassemble(
                                             inst->instAddr()));
-                                return(WidthInfo(WidthClass::NoInfo));
+                                return decodeNeonAcrossLanes(inst);
                             }
                         } else if (bits(machInst, 24) ||
                                 bits(machInst, 21) ||
@@ -825,6 +825,88 @@ WidthDecoder<Impl>::decodeNeon2RegMisc(const DynInstPtr &inst)
 }
 
 template <class Impl>
+WidthInfo
+WidthDecoder<Impl>::decodeNeonAcrossLanes(const DynInstPtr &inst)
+{
+    using namespace ArmISAInst;
+
+    ArmISA::ExtMachInst machInst = inst->staticInst->machInst;
+
+    uint8_t q = bits(machInst, 30);
+    uint8_t u = bits(machInst, 29);
+    uint8_t size = bits(machInst, 23, 22);
+    uint8_t opcode = bits(machInst, 16, 12);
+
+    uint8_t size_q = (size << 1) | q;
+    uint8_t switchVal = opcode | ((u ? 1 : 0) << 5);
+
+    switch (switchVal) {
+        case 0x0a:
+            if (size_q != 0x4 && size != 0x3) {
+                // SmaxvDX, SmaxvQX
+                DPRINTF(WidthDecoderDecode,
+                        "Neon SMAX inst decoded: %s. Size: %d, Q: %d.\n",
+                        inst->staticInst->disassemble(inst->instAddr()),
+                        size, q);
+                return(WidthInfo(WidthClass::SimdPackingAlu,
+                                 widthOp1VectorAcross(inst, q, size, 2),
+                                 size));
+            }
+            break;
+        case 0x1a:
+            if (size_q != 0x4 && size != 0x3) {
+                // SminvDX, SminvQX
+                DPRINTF(WidthDecoderDecode,
+                        "Neon SMIN inst decoded: %s. Size: %d, Q: %d.\n",
+                        inst->staticInst->disassemble(inst->instAddr()),
+                        size, q);
+                return(WidthInfo(WidthClass::SimdPackingAlu,
+                                 widthOp1VectorAcross(inst, q, size, 2),
+                                 size));
+            }
+            break;
+        case 0x1b:
+            if (size_q != 0x4 && size != 0x3) {
+                // AddvDX, AddvQX
+                DPRINTF(WidthDecoderDecode,
+                        "Neon ADDV inst decoded: %s. Size: %d, Q: %d.\n",
+                        inst->staticInst->disassemble(inst->instAddr()),
+                        size, q);
+                return(WidthInfo(WidthClass::SimdPackingAlu,
+                                 widthOp1VectorAcross(inst, q, size, 2),
+                                 size));
+            }
+            break;
+        case 0x2a:
+            if (size_q != 0x4 && size != 0x3) {
+                // UmaxvDX, UmaxvQX
+                DPRINTF(WidthDecoderDecode,
+                        "Neon UMAX inst decoded: %s. Size: %d, Q: %d.\n",
+                        inst->staticInst->disassemble(inst->instAddr()),
+                        size, q);
+                return(WidthInfo(WidthClass::SimdPackingAlu,
+                                 widthOp1VectorAcross(inst, q, size, 2),
+                                 size));
+            }
+            break;
+        case 0x3a:
+            if (size_q != 0x4 && size != 0x3) {
+                // UminvDX, UminvQX
+                DPRINTF(WidthDecoderDecode,
+                        "Neon UMIN inst decoded: %s. Size: %d, Q: %d.\n",
+                        inst->staticInst->disassemble(inst->instAddr()),
+                        size, q);
+                return(WidthInfo(WidthClass::SimdPackingAlu,
+                                 widthOp1VectorAcross(inst, q, size, 2),
+                                 size));
+            }
+            break;
+    }
+
+    return(WidthInfo(WidthClass::NoInfo));
+}
+
+template <class Impl>
 VecWidthCode
 WidthDecoder<Impl>::widthOp1VectorRegl(const DynInstPtr &inst,
                                        uint8_t q, uint8_t size,
@@ -839,6 +921,24 @@ WidthDecoder<Impl>::widthOp1VectorRegl(const DynInstPtr &inst,
             maskOp1.to_string(),
             size);
     return maskOp1;
+}
+
+template <class Impl>
+VecWidthCode
+WidthDecoder<Impl>::widthOp1VectorAcross(const DynInstPtr &inst,
+                                         uint8_t q, uint8_t size,
+                                         uint8_t op1)
+{
+    VecWidthCode maskOp1, maskRes;
+
+    maskOp1 = vecSrcRegWidthMask(inst, q, size, op1);
+
+    maskRes = maskOp1.generate1OpAcross();
+    DPRINTF(WidthDecoderWidth, "Instruction with 1 vector operand (across)"
+            " has width mask %s (eSize=%i).\n",
+            maskOp1.to_string(),
+            size);
+    return maskRes;
 }
 
 template <class Impl>
