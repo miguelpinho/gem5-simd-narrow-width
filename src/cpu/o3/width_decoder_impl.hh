@@ -435,18 +435,18 @@ WidthDecoder<Impl>::decode(const DynInstPtr &inst)
                             "Other AdvSimd inst decoded: %s.\n",
                             inst->staticInst->disassemble(
                                 inst->instAddr()));
-                    return(WidthInfo(WidthClass::NoInfo));
+                    return(WidthInfo());
                 }
             }
 
-            return(WidthInfo(WidthClass::NoInfo));
+            return(WidthInfo());
         }
     }
 
     DPRINTF(WidthDecoderDecode,
             "Non AARCH64 inst decoded: %s.\n",
             inst->staticInst->disassemble(inst->instAddr()));
-    return(WidthInfo(WidthClass::NoInfo));
+    return(WidthInfo());
 }
 
 template <class Impl>
@@ -686,7 +686,7 @@ WidthDecoder<Impl>::decodeNeon3Same(const DynInstPtr &inst)
             break;
         case 0x17:
             if (u || size_q == 0x6) {
-                return(WidthInfo(WidthClass::NoInfo));
+                return(WidthInfo());
             } else {
                 // AddpDX, AddpQX
                 DPRINTF(WidthDecoderDecode,
@@ -700,7 +700,7 @@ WidthDecoder<Impl>::decodeNeon3Same(const DynInstPtr &inst)
             break;
     }
 
-    return(WidthInfo(WidthClass::NoInfo));
+    return(WidthInfo());
 }
 
 template <class Impl>

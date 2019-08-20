@@ -13,7 +13,7 @@ VecWidthCode::VecWidthCode(int _nElem, int _eBits)
     : eBits(_eBits),
       nElem(_nElem)
 {
-    if (_nElem * _eBits > VecRegSizeBits) {
+    if (_nElem * _eBits > VecSizeBits) {
         panic("Vector code is too large (%dx%d-bits).",
               _nElem, _eBits);
     }
@@ -33,7 +33,7 @@ VecWidthCode::VecWidthCode(int _nElem, int _eBits, int val)
 }
 
 int
-VecWidthCode::count()
+VecWidthCode::totalWidth()
 {
     // TODO: use std::accumullate().
     int ret = 0;
@@ -44,7 +44,7 @@ VecWidthCode::count()
 }
 
 int
-VecWidthCode::max()
+VecWidthCode::maxWidth()
 {
     // TODO: use std::max_element().
     int ret = 0;
@@ -71,7 +71,7 @@ VecWidthCode::to_string()
 VecWidthCode
 VecWidthCode::generate1OpAcross()
 {
-    return VecWidthCode(nElem, eBits, max());
+    return VecWidthCode(nElem, eBits, maxWidth());
 }
 
 VecWidthCode

@@ -1,6 +1,7 @@
 /// MPINHO 23-jul-2019 BEGIN ///
 
 #include "cpu/o3/width_info.hh"
+#include "cpu/func_unit_width.hh"
 
 WidthInfo::WidthInfo()
     : width_class(WidthClass::NoInfo),

@@ -32,7 +32,8 @@ optimalPacking(VecWidthCode mask1, VecWidthCode mask2) {
     assert(mask1.vectorSize() == mask2.vectorSize());
 
     // Try to pack as much as possible, even if unfeasible.
-    return (mask1.count() + mask2.count()) <= VecWidthCode::vectorSize();
+    int sumWidth = mask1.totalWidth() + mask2.totalWidth();
+    return sumWidth <= VecWidthCode::vectorSize();
 }
 
 /// MPINHO 24-jul-2019 END ///
