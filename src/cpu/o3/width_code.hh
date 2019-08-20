@@ -2,7 +2,6 @@
 #ifndef __CPU_O3_WIDTH_CODE_HH__
 #define __CPU_O3_WIDTH_CODE_HH__
 
-#include <algorithm>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -65,9 +64,11 @@ class VecWidthCode
         }
 
         int count();
+        int max();
 
         std::string to_string();
 
+        VecWidthCode generate1OpAcross();
         VecWidthCode combine2OpRegl(const VecWidthCode& b);
         VecWidthCode combine2OpPair(const VecWidthCode& b);
 };

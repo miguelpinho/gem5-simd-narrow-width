@@ -1,5 +1,8 @@
 /// MPINHO 24-mar-2019 BEGIN ///
 
+#include <algorithm>
+#include <numeric>
+
 #include "cpu/o3/width_code.hh"
 #include "config/the_isa.hh"
 
@@ -32,9 +35,22 @@ VecWidthCode::VecWidthCode(int _nElem, int _eBits, int val)
 int
 VecWidthCode::count()
 {
+    // TODO: use std::accumullate().
     int ret = 0;
     for (int i = 0; i < nElem; i++) {
         ret += code[i];
+    }
+    return ret;
+}
+
+int
+VecWidthCode::max()
+{
+    // TODO: use std::max_element().
+    int ret = 0;
+    for (int i = 0; i < nElem; i++) {
+        if (code[i] > ret)
+            ret = code[i];
     }
     return ret;
 }
@@ -50,6 +66,12 @@ VecWidthCode::to_string()
     ss << ":" << nElem << "x" << eBits << "-bit";
 
     return ss.str();
+}
+
+VecWidthCode
+VecWidthCode::generate1OpAcross()
+{
+    return VecWidthCode(nElem, eBits, max());
 }
 
 VecWidthCode

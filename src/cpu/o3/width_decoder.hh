@@ -100,6 +100,9 @@ class WidthDecoder
     VecWidthCode widthOp1VectorRegl(const DynInstPtr &inst,
                                     uint8_t q, uint8_t size,
                                     uint8_t op1);
+    VecWidthCode widthOp1VectorAcross(const DynInstPtr &inst,
+                                      uint8_t q, uint8_t size,
+                                      uint8_t op1);
     VecWidthCode widthOp2VectorRegl(const DynInstPtr &inst,
                                     uint8_t q, uint8_t size,
                                     uint8_t op1, uint8_t op2);
@@ -151,10 +154,12 @@ class WidthDecoder
 
     /** Decode instruction width. */
     WidthInfo decode(const DynInstPtr &inst);
-    /** Decode 3Same instruction width. */
+    /** Decode Neon 3Same instruction width. */
     WidthInfo decodeNeon3Same(const DynInstPtr &inst);
-    /** Decode 2RegMisc instruction width. */
+    /** Decode Neon 2RegMisc instruction width. */
     WidthInfo decodeNeon2RegMisc(const DynInstPtr &inst);
+    /** Decode Neon AcrossLanes instruction width. */
+    WidthInfo decodeNeonAcrossLanes(const DynInstPtr &inst);
 };
 
 #endif // __CPU_O3_WIDTH_DECODER_BOARD_HH__
