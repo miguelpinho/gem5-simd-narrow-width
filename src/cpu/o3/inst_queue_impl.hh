@@ -1605,7 +1605,8 @@ InstructionQueue<Impl>::addIfReady(const DynInstPtr &inst)
         widthDecoder.addWidthInfo(inst);
 
         // Generate width trace.
-        DPRINTF(Width, "Width: %s [sn:%lli].\n",
+        DPRINTF(Width, "Width (opclass:%s): %s [sn:%lli].\n",
+                Enums::OpClassStrings[static_cast<int>(op_class)],
                 inst->getWidth().to_string(),
                 inst->seqNum);
         /// MPINHO 07-aug-2019 END ///
