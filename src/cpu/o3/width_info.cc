@@ -83,9 +83,14 @@ WidthInfo::to_string()
 
     ss << WidthClassStrings[static_cast<int>(width_class)];
 
-    if (width_class != WidthClass::NoInfo) {
-        ss << "::";
-        ss << width_mask.to_string();
+    if (width_class != WidthClass::NoInfo &&
+        width_class != WidthClass::SimdNoInfo) {
+        ss << " (elem: "
+           << VecElemSizeStrings[static_cast<int>(elem_size)]
+           << ", total: "
+           << width_mask.totalWidth()
+           << ", mask: "
+           << width_mask.to_string();
     }
 
     return ss.str();
