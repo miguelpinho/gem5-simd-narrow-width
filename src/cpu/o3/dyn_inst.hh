@@ -459,6 +459,7 @@ public:
     void setWidth(WidthInfo _width) { width = _width; }
 
     /** Get the instruction width information. */
+    // TODO: change this to reference.
     WidthInfo getWidth() { return width; }
 
     /** Get the instruction width class. */
