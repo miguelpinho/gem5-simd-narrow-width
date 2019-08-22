@@ -19,6 +19,7 @@
 #include "cpu/o3/width_info.hh"
 #include "cpu/op_class.hh"
 #include "debug/WidthDecoder.hh"
+#include "enums/VecElemSize.hh"
 #include "enums/WidthClass.hh"
 #include "enums/WidthDefinition.hh"
 #include "enums/WidthPackingPolicy.hh"
@@ -161,7 +162,44 @@ class WidthDecoder
     WidthInfo decodeNeon2RegMisc(const DynInstPtr &inst);
     /** Decode Neon AcrossLanes instruction width. */
     WidthInfo decodeNeonAcrossLanes(const DynInstPtr &inst);
+
+    /////////////////////////
+    // Consts
+    /////////////////////////
+    static constexpr int Num_VecElemSize =
+        static_cast<int>(VecElemSize::Num_VecElemSize);
+    static const std::array<const int, Num_VecElemSize> Bits_VecElemSize;
+    static const std::array<const VecElemSize, 4> SizeToVecElemSize;
+
+    /////////////////////////
+    // Stats
+    /////////////////////////
+    /** Stat for width of vector operand elements, by vector element size. */
+    std::array<Stats::Distribution, Num_VecElemSize> statVectorOpElemWidth;
+    /** Stat for total vector operand width, by vector element size. */
+    std::array<Stats::Distribution, Num_VecElemSize> statVectorOpTotalWidth;
+    /** Stat for width of vector inst elements, by vector element size. */
+    std::array<Stats::Distribution, Num_VecElemSize> statVectorInstElemWidth;
+    /** Stat for total vector inst width, by vector element size. */
+    std::array<Stats::Distribution, Num_VecElemSize> statVectorInstTotalWidth;
+
+    /** Sample width distribution for vector operands. */
+    void sampleVecOp(VecWidthCode &mask, uint8_t size);
+    /** Sample width distribution for vector insts. */
+    void sampleVecInst(VecWidthCode &mask, uint8_t size);
 };
 
+template<class Impl>
+const std::array<const int, WidthDecoder<Impl>::Num_VecElemSize>
+  WidthDecoder<Impl>::Bits_VecElemSize = {0, 8, 16, 32, 64};
+
+template<class Impl>
+const std::array<const VecElemSize, 4>
+  WidthDecoder<Impl>::SizeToVecElemSize = {
+    VecElemSize::Bit8,
+    VecElemSize::Bit16,
+    VecElemSize::Bit32,
+    VecElemSize::Bit64
+  };
 #endif // __CPU_O3_WIDTH_DECODER_BOARD_HH__
 /// MPINHO 12-mar-2019 END ///

@@ -81,8 +81,7 @@ VecWidthCode::combine2OpRegl(const VecWidthCode &b)
 
     VecWidthCode res(nElem, eBits);
 
-    for (int i = 0; i < nElem; i++)
-    {
+    for (int i = 0; i < nElem; i++) {
         res.code[i] = std::max(code[i], b.code[i]);
     }
     return res;
@@ -96,12 +95,10 @@ VecWidthCode::combine2OpPair(const VecWidthCode &b)
     VecWidthCode res(nElem, eBits);
 
     int pos = 0;
-    for (int i = 0; i < nElem; i += 2)
-    {
+    for (int i = 0; i < nElem; i += 2) {
         res.code[pos++] = std::max(code[i], code[i+1]);
     }
-    for (int i = 0; i < nElem; i += 2)
-    {
+    for (int i = 0; i < nElem; i += 2) {
         res.code[pos++] = std::max(b.code[i], b.code[i+1]);
     }
     return res;

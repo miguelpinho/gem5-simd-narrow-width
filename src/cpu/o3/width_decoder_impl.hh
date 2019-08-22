@@ -180,6 +180,42 @@ WidthDecoder<Impl>::init(DerivO3CPUParams *params)
     /// MPINHO 08-may-2019 END ///
 }
 
+template <class Impl>
+void
+WidthDecoder<Impl>::regStats()
+{
+    using namespace Stats;
+
+    for (int i = 0; i < Num_VecElemSize; i++) {
+        statVectorOpElemWidth[i]
+            .init(0, Bits_VecElemSize[i], 1)
+            .name(name() + ".statVectorOpElemWidth_" + VecElemSizeStrings[i])
+            .desc("Width of vector operand elements, by vector element size.")
+            .prereq(statVectorOpElemWidth[i])
+            ;
+        statVectorOpTotalWidth[i]
+            .init(0, VecSizeBits, 1)
+            .name(name() + ".statVectorOpTotalWidth" + VecElemSizeStrings[i])
+            .desc("Total width of vector operand elements,"
+                  " by vector element size.")
+            .prereq(statVectorOpTotalWidth[i])
+            ;
+        statVectorInstElemWidth[i]
+            .init(0, Bits_VecElemSize[i], 1)
+            .name(name() + ".statVectorInstElemWidth" + VecElemSizeStrings[i])
+            .desc("Width of vector inst elements, by vector element size.")
+            .prereq(statVectorInstElemWidth[i])
+            ;
+        statVectorInstTotalWidth[i]
+            .init(0, VecSizeBits, 1)
+            .name(name() + ".statVectorInstTotalWidth" + VecElemSizeStrings[i])
+            .desc("Total width of vector inst elements,"
+                  " by vector element size.")
+            .prereq(statVectorInstTotalWidth[i])
+            ;
+    }
+}
+
 /**
  * @todo Change to use resol granularity.
  */
@@ -915,7 +951,9 @@ WidthDecoder<Impl>::widthOp1VectorRegl(const DynInstPtr &inst,
     VecWidthCode maskOp1;
 
     maskOp1 = vecSrcRegWidthMask(inst, q, size, op1);
+    sampleVecOp(maskOp1, size);
 
+    sampleVecInst(maskOp1, size);
     DPRINTF(WidthDecoderWidth, "Instruction with 1 vector operand (regular)"
             " has width mask %s (eSize=%i).\n",
             maskOp1.to_string(),
@@ -932,8 +970,10 @@ WidthDecoder<Impl>::widthOp1VectorAcross(const DynInstPtr &inst,
     VecWidthCode maskOp1, maskRes;
 
     maskOp1 = vecSrcRegWidthMask(inst, q, size, op1);
+    sampleVecOp(maskOp1, size);
 
     maskRes = maskOp1.generate1OpAcross();
+    sampleVecInst(maskRes, size);
     DPRINTF(WidthDecoderWidth, "Instruction with 1 vector operand (across)"
             " has width mask %s (eSize=%i).\n",
             maskOp1.to_string(),
@@ -951,8 +991,11 @@ WidthDecoder<Impl>::widthOp2VectorRegl(const DynInstPtr &inst,
 
     maskOp1 = vecSrcRegWidthMask(inst, q, size, op1);
     maskOp2 = vecSrcRegWidthMask(inst, q, size, op2);
+    sampleVecOp(maskOp1, size);
+    sampleVecOp(maskOp2, size);
 
     maskRes = maskOp1.combine2OpRegl(maskOp2);
+    sampleVecInst(maskRes, size);
     DPRINTF(WidthDecoderWidth, "Instruction with 2 vectors operands (regular)"
             " has width mask %s (eSize=%i).\n",
             maskRes.to_string(),
@@ -970,8 +1013,11 @@ WidthDecoder<Impl>::widthOp2VectorPair(const DynInstPtr &inst,
 
     maskOp1 = vecSrcRegWidthMask(inst, q, size, op1);
     maskOp2 = vecSrcRegWidthMask(inst, q, size, op2);
+    sampleVecOp(maskOp1, size);
+    sampleVecOp(maskOp2, size);
 
     maskRes = maskOp1.combine2OpPair(maskOp2);
+    sampleVecInst(maskRes, size);
     DPRINTF(WidthDecoderWidth, "Instruction with 2 vectors operands (pairwise)"
             " has width mask %s (eSize=%i).\n",
             maskRes.to_string(),
@@ -979,10 +1025,32 @@ WidthDecoder<Impl>::widthOp2VectorPair(const DynInstPtr &inst,
     return maskRes;
 }
 
+
 template <class Impl>
 void
-WidthDecoder<Impl>::regStats()
-{}
+WidthDecoder<Impl>::sampleVecOp(VecWidthCode &mask, uint8_t size)
+{
+    VecElemSize eSize = SizeToVecElemSize[size];
+
+    for (int i = 0; i < mask.numElem(); i++) {
+        statVectorOpElemWidth[(int) eSize].sample(mask.get(i));
+    }
+
+    statVectorOpTotalWidth[(int) eSize].sample(mask.totalWidth());
+}
+
+template <class Impl>
+void
+WidthDecoder<Impl>::sampleVecInst(VecWidthCode &mask, uint8_t size)
+{
+    VecElemSize eSize = SizeToVecElemSize[size];
+
+    for (int i = 0; i < mask.numElem(); i++) {
+        statVectorInstElemWidth[(int) eSize].sample(mask.get(i));
+    }
+
+    statVectorInstTotalWidth[(int) eSize].sample(mask.totalWidth());
+}
 
 #endif // __CPU_O3_WIDTH_DECODER_IMPL_HH__
 /// MPINHO 12-mar-2019 END ///
