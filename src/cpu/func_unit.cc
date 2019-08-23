@@ -46,7 +46,13 @@ FuncUnit::FuncUnit()
     opLatencies.fill(0);
     pipelined.fill(false);
     capabilityList.reset();
-    fuseCap = 0; /// MPINHO 07-aug-2019 ///
+    /// MPINHO 22-aug-2019 BEGIN ///
+    issueCap = 0;
+    widthCap = 0;
+    availIssueCap = 0;
+    availWidthCap = 0;
+    simd = false;
+    /// MPINHO 22-aug-2019 END ///
 }
 
 
@@ -60,7 +66,13 @@ FuncUnit::FuncUnit(const FuncUnit &fu)
     }
 
     capabilityList = fu.capabilityList;
-    fuseCap = fu.fuseCap; /// MPINHO 07-aug-2019 ///
+    /// MPINHO 22-aug-2019 BEGIN ///
+    issueCap = fu.issueCap;
+    availIssueCap = fu.issueCap;
+    widthCap = fu.widthCap;
+    availWidthCap = fu.widthCap;
+    simd = fu.simd;
+    /// MPINHO 22-aug-2019 END ///
 }
 
 
@@ -76,13 +88,33 @@ FuncUnit::addCapability(OpClass cap, unsigned oplat, bool pipeline)
     pipelined[cap] = pipeline;
 }
 
-/// MPINHO 07-aug-2019 BEGIN ///
+/// MPINHO 22-aug-2019 BEGIN ///
 void
-FuncUnit::setFuseCap(unsigned _fuseCap)
+FuncUnit::setIssueCap(unsigned _issueCap)
 {
-    fuseCap = _fuseCap;
+    issueCap = _issueCap;
+    availIssueCap = _issueCap;
 }
-/// MPINHO 07-aug-2019 END ///
+
+void
+FuncUnit::setWidthCap(unsigned _widthCap)
+{
+    widthCap = _widthCap;
+    availWidthCap = _widthCap;
+}
+
+void
+FuncUnit::setSimd(bool _simd)
+{
+    simd = _simd;
+}
+
+bool
+FuncUnit::isSimd()
+{
+    return simd;
+}
+/// MPINHO 22-aug-2019 END ///
 
 bool
 FuncUnit::provides(OpClass capability)
@@ -108,13 +140,49 @@ FuncUnit::isPipelined(OpClass capability)
     return pipelined[capability];
 }
 
-/// MPINHO 12-aug-2019 BEGIN ///
-unsigned
-FuncUnit::getFuseCap()
+/// MPINHO 22-aug-2019 BEGIN ///
+unsigned FuncUnit::getIssueCap()
 {
-    return fuseCap;
+    return availIssueCap;
 }
-/// MPINHO 12-aug-2019 END ///
+
+unsigned FuncUnit::getUsedIssueCap()
+{
+    return issueCap - availIssueCap;
+}
+
+void FuncUnit::useIssueCap()
+{
+    assert(availIssueCap > 0);
+    --availIssueCap;
+}
+
+void FuncUnit::resetIssueCap()
+{
+    availIssueCap = issueCap;
+}
+
+unsigned FuncUnit::getWidthCap()
+{
+    return availWidthCap;
+}
+
+unsigned FuncUnit::getUsedWidthCap()
+{
+    return widthCap - availWidthCap;
+}
+
+void FuncUnit::useWidthCap(unsigned width)
+{
+    assert(width <= availWidthCap);
+    availWidthCap -= width;
+}
+
+void FuncUnit::resetWidthCap()
+{
+    availWidthCap = widthCap;
+}
+/// MPINHO 22-aug-2019 END ///
 
 ////////////////////////////////////////////////////////////////////////////
 //

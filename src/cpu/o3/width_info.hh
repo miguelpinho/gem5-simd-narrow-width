@@ -31,7 +31,9 @@ class WidthInfo {
                   uint8_t _size);
 
         WidthClass getWidthClass() { return width_class; }
+        int getWidthVal() { return width_mask.totalWidth(); }
         VecElemSize getElemSize() { return elem_size; }
+        bool hasWidthInfo();
         bool isFuseType();
         bool matchType(WidthInfo &b);
         bool canFuse(WidthInfo &b, PackingCriteria packingCriteria);

@@ -53,6 +53,7 @@ class O3_ARM_v7a_FP(FUDesc):
                OpDesc(opClass='FloatMultAcc', opLat=4),
                OpDesc(opClass='FloatMisc', opLat=3) ]
     count = 4
+    widthCap = 128
 
 # SIMD instructions
 class O3_ARM_v7a_AdvSimd(FUDesc):
@@ -86,6 +87,8 @@ class O3_ARM_v7a_AdvSimd(FUDesc):
                OpDesc(opClass='FloatMisc', opLat=3) ]
     count = 4
     fuseCap = 1
+    widthCap = 128
+    simd = True
 
 
 # Load/Store Units
@@ -93,11 +96,13 @@ class O3_ARM_v7a_Load(FUDesc):
     opList = [ OpDesc(opClass='MemRead',opLat=2),
                OpDesc(opClass='FloatMemRead',opLat=2) ]
     count = 2
+    widthCap = 128
 
 class O3_ARM_v7a_Store(FUDesc):
     opList = [ OpDesc(opClass='MemWrite',opLat=2),
                OpDesc(opClass='FloatMemWrite',opLat=2) ]
     count = 2
+    widthCap = 128
 
 # Functional Units for this CPU
 class O3_ARM_v7a_FUP(FUPool):

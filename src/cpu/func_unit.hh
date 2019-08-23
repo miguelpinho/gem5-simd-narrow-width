@@ -65,11 +65,16 @@ class FUDesc : public SimObject
   public:
     std::vector<OpDesc *> opDescList;
     unsigned number;
+    /// MPINHO 22-aug-2019 BEGIN ///
     unsigned fuseCap;
+    unsigned widthCap;
+    bool simd;
+    /// MPINHO 22-aug-2019 END ///
 
     FUDesc(const FUDescParams *p)
         : SimObject(p), opDescList(p->opList), number(p->count),
-          fuseCap(p->fuseCap)
+          fuseCap(p->fuseCap), widthCap(p->widthCap),
+          simd(p->simd)
     {};
 };
 
@@ -91,7 +96,11 @@ class FuncUnit
     std::array<unsigned, Num_OpClasses> opLatencies;
     std::array<bool, Num_OpClasses> pipelined;
     std::bitset<Num_OpClasses> capabilityList;
-    unsigned fuseCap; /// MPINHO 07-aug-2019 ///
+    /// MPINHO 22-aug-2019 BEGIN ///
+    unsigned issueCap, availIssueCap;
+    unsigned widthCap, availWidthCap;
+    bool simd;
+    /// MPINHO 22-aug-2019 END ///
 
   public:
     FuncUnit();
@@ -100,14 +109,29 @@ class FuncUnit
     std::string name;
 
     void addCapability(OpClass cap, unsigned oplat, bool pipelined);
-    void setFuseCap(unsigned _fuseCap);
+    /// MPINHO 22-aug-2019 BEGIN ///
+    void setIssueCap(unsigned _issueCap);
+    void setWidthCap(unsigned _widthCap);
+    void setSimd(bool _simd);
+    bool isSimd();
+    /// MPINHO 22-aug-2019 END ///
 
     bool provides(OpClass capability);
     std::bitset<Num_OpClasses> capabilities();
 
     unsigned &opLatency(OpClass capability);
     bool isPipelined(OpClass capability);
-    unsigned getFuseCap();
+
+    /// MPINHO 22-aug-2019 BEGIN ///
+    unsigned getIssueCap();
+    unsigned getUsedIssueCap();
+    void useIssueCap();
+    void resetIssueCap();
+    unsigned getWidthCap();
+    unsigned getUsedWidthCap();
+    void useWidthCap(unsigned width);
+    void resetWidthCap();
+    /// MPINHO 22-aug-2019 END ///
 };
 
 #endif // __FU_POOL_HH__

@@ -68,8 +68,10 @@ class FUDesc(SimObject):
     type = 'FUDesc'
     cxx_header = "cpu/func_unit.hh"
     count = Param.Int("number of these FU's available")
-    ### MPINHO 07-aug-2019 BEGIN ###
+    ### MPINHO 22-aug-2019 BEGIN ###
     fuseCap = Param.Int(0, "number of extra instructions this FU can fuse,"
         "if their width and type match")
-    ### MPINHO 07-aug-2019 END ###
+    widthCap = Param.Int(64, "width functional unit has available")
+    simd = Param.Bool(False, "whether this functional unit is simd")
+    ### MPINHO 22-aug-2019 END ###
     opList = VectorParam.OpDesc("operation classes for this FU type")

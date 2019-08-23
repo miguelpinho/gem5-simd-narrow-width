@@ -49,6 +49,7 @@
 #include <string>
 #include <vector>
 
+#include "base/statistics.hh"
 #include "cpu/op_class.hh"
 #include "params/FUPool.hh"
 #include "sim/sim_object.hh"
@@ -123,16 +124,34 @@ class FUPool : public SimObject
     /** Number of FUs. */
     int numFU;
 
+    /// MPINHO 23-aug-2019 BEGIN ///
+    /** Number of SIMD FUs. */
+    int numSimdFU;
+    /// MPINHO 23-aug-2019 END ///
+
     /** Functional units. */
     std::vector<FuncUnit *> funcUnits;
 
     typedef std::vector<FuncUnit *>::iterator fuListIterator;
+
+    /** Max Caps. */
+    int maxIssueCap, maxWidthCap;
+
+    /** Stats. */
+    // Stats::VectorDistribution statIssueUsed;
+    // Stats::VectorDistribution statWidthUsed;
+    Stats::Distribution statSimdFUUsed;
 
   public:
     typedef FUPoolParams Params;
     /** Constructs a FU pool. */
     FUPool(const Params *p);
     ~FUPool();
+
+    /// MPINHO 23-aug-2019 BEGIN ///
+    /** Register FU Pool stats. */
+    void regStats();
+    /// MPINHO 23-aug-2019 END ///
 
     static constexpr auto NoCapableFU = -2;
     static constexpr auto NoFreeFU = -1;
@@ -170,13 +189,31 @@ class FUPool : public SimObject
         return pipelined[capability];
     }
 
-    /// MPINHO 13-aug-2019 BEGIN ///
-    /** Returns the fuse capability of a given FU. */
-    unsigned getFUFuseCap(int fu_idx);
+    /// MPINHO 22-aug-2019 BEGIN ///
+    /** Returns the name of a given FU. */
+    std::string getFUName(int fu_idx);
+
+    /** Returns the current issue capability of a given FU. */
+    unsigned getFUIssueCap(int fu_idx);
+
+    /** Depletes the issue capability of a given FU. */
+    void useFUIssueCap(int fu_idx);
+
+    /** Returns the current width capability of a given FU. */
+    unsigned getFUWidthCap(int fu_idx);
+
+    /** Depletes the width capability of a given FU. */
+    void useFUWidthCap(int fu_idx, unsigned width);
+
+    /** Reset FUs caps, for non-busy FUs. */
+    void resetFUCaps();
 
     /** Checks whether a giver FU has a capability. */
     bool hasCapability(int fu_idx, OpClass capability);
-    /// MPINHO 13-aug-2019 END ///
+
+    /** Update stats (to call each cycle). */
+    void updateStats();
+    /// MPINHO 22-aug-2019 END ///
 
     /** Have all the FUs drained? */
     bool isDrained() const;

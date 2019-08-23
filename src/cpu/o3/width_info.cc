@@ -42,6 +42,16 @@ WidthInfo::WidthInfo(WidthClass _width_class,
 }
 
 bool
+WidthInfo::hasWidthInfo()
+{
+    if (width_class == WidthClass::SimdNoPacking) return true;
+    if (width_class == WidthClass::SimdPackingAlu) return true;
+    if (width_class == WidthClass::SimdPackingMult) return true;
+
+    return false;
+}
+
+bool
 WidthInfo::isFuseType()
 {
     if (width_class == WidthClass::SimdPackingAlu) return true;
