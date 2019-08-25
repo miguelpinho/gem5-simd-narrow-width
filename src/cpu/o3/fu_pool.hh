@@ -46,11 +46,13 @@
 #include <array>
 #include <bitset>
 #include <list>
+#include <sstream>
 #include <string>
 #include <vector>
 
 #include "base/statistics.hh"
 #include "cpu/op_class.hh"
+#include "debug/FU.hh"
 #include "params/FUPool.hh"
 #include "sim/sim_object.hh"
 
@@ -138,9 +140,9 @@ class FUPool : public SimObject
     int maxIssueCap, maxWidthCap;
 
     /** Stats. */
-    // Stats::VectorDistribution statIssueUsed;
-    // Stats::VectorDistribution statWidthUsed;
     Stats::Distribution statSimdFUUsed;
+    Stats::VectorDistribution statSimdIssueUsed;
+    Stats::VectorDistribution statSimdWidthUsed;
 
   public:
     typedef FUPoolParams Params;
