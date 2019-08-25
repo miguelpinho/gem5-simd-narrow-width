@@ -42,8 +42,21 @@ class O3_ARM_v7a_Complex_Int(FUDesc):
     count = 2
 
 
-# Floating point and SIMD instructions
+# Floating point instructions
 class O3_ARM_v7a_FP(FUDesc):
+    opList = [ OpDesc(opClass='FloatAdd', opLat=3),
+               OpDesc(opClass='FloatCmp', opLat=3),
+               OpDesc(opClass='FloatCvt', opLat=3),
+               OpDesc(opClass='FloatDiv', opLat=9, pipelined=False),
+               OpDesc(opClass='FloatSqrt', opLat=33, pipelined=False),
+               OpDesc(opClass='FloatMult', opLat=4),
+               OpDesc(opClass='FloatMultAcc', opLat=4),
+               OpDesc(opClass='FloatMisc', opLat=3) ]
+    count = 4
+    widthCap = 128
+
+# SIMD instructions
+class O3_ARM_v7a_AdvSimd(FUDesc):
     opList = [ OpDesc(opClass='SimdAdd', opLat=2),
                OpDesc(opClass='SimdAddAcc', opLat=2),
                OpDesc(opClass='SimdAlu', opLat=2),
@@ -74,6 +87,8 @@ class O3_ARM_v7a_FP(FUDesc):
                OpDesc(opClass='FloatMisc', opLat=3) ]
     count = 4
     fuseCap = 1
+    widthCap = 128
+    simd = True
 
 
 # Load/Store Units
@@ -81,16 +96,19 @@ class O3_ARM_v7a_Load(FUDesc):
     opList = [ OpDesc(opClass='MemRead',opLat=2),
                OpDesc(opClass='FloatMemRead',opLat=2) ]
     count = 2
+    widthCap = 128
 
 class O3_ARM_v7a_Store(FUDesc):
     opList = [ OpDesc(opClass='MemWrite',opLat=2),
                OpDesc(opClass='FloatMemWrite',opLat=2) ]
     count = 2
+    widthCap = 128
 
 # Functional Units for this CPU
 class O3_ARM_v7a_FUP(FUPool):
     FUList = [O3_ARM_v7a_Simple_Int(), O3_ARM_v7a_Complex_Int(),
-              O3_ARM_v7a_Load(), O3_ARM_v7a_Store(), O3_ARM_v7a_FP()]
+              O3_ARM_v7a_Load(), O3_ARM_v7a_Store(), O3_ARM_v7a_FP(),
+              O3_ARM_v7a_AdvSimd()]
 
 # Bi-Mode Branch Predictor
 class O3_ARM_v7a_BP(BiModeBP):

@@ -85,6 +85,9 @@ FUPool::FUPool(const Params *p)
     : SimObject(p)
 {
     numFU = 0;
+    numSimdFU = 0;
+    maxIssueCap = 1;
+    maxWidthCap = 0;
 
     funcUnits.clear();
 
@@ -131,9 +134,19 @@ FUPool::FUPool(const Params *p)
                     pipelined[(*j)->opClass] = false;
             }
 
-            fu->setFuseCap((*i)->fuseCap); /// MPINHO 07-aug-2019 ///
+            /// MPINHO 22-aug-2019 BEGIN ///
+            int newIssueCap = (*i)->fuseCap + 1;
+            int newWidthCap = (*i)->widthCap;
+            fu->setIssueCap(newIssueCap);
+            fu->setWidthCap(newWidthCap);
+            if (newIssueCap > maxIssueCap) maxIssueCap = newIssueCap;
+            if (newWidthCap > maxWidthCap) maxWidthCap = newWidthCap;
+            fu->setSimd((*i)->simd);
+            /// MPINHO 22-aug-2019 END ///
 
             numFU++;
+            if ((*i)->simd)
+                numSimdFU++;
 
             //  Add the appropriate number of copies of this FU to the list
             fu->name = (*i)->name() + "(0)";
@@ -142,6 +155,8 @@ FUPool::FUPool(const Params *p)
             for (int c = 1; c < (*i)->number; ++c) {
                 ostringstream s;
                 numFU++;
+                if ((*i)->simd)
+                    numSimdFU++;
                 FuncUnit *fu2 = new FuncUnit(*fu);
 
                 s << (*i)->name() << "(" << c << ")";
@@ -157,6 +172,34 @@ FUPool::FUPool(const Params *p)
         unitBusy[i] = false;
     }
 }
+
+/// MPINHO 23-aug-2019 BEGIN ///
+void
+FUPool::regStats()
+{
+    statSimdFUUsed
+        .init(0, numSimdFU, 1)
+        .name(name() + ".simd_fu_used")
+        .desc("dist of the number of Simd FU used")
+        ;
+    statSimdIssueUsed
+        .init(numSimdFU, 0, maxIssueCap, 1)
+        .name(name() + ".issue_used_simd_fu")
+        .desc("dist of insts issued for each Simd FU")
+        ;
+    statSimdWidthUsed
+        .init(numFU, 0, maxWidthCap, 8)
+        .name(name() + ".width_used_fu")
+        .desc("dist of width used by each Simd FU")
+        ;
+    for (int i = 0; i < numSimdFU; i++) {
+        std::stringstream ss;
+        ss << "(" << i << ")";
+        statSimdIssueUsed.subname(i, ss.str());
+        statSimdWidthUsed.subname(i, ss.str());
+    }
+}
+/// MPINHO 23-aug-2019 END ///
 
 int
 FUPool::getUnit(OpClass capability)
@@ -241,16 +284,85 @@ FUPool::dump()
 }
 
 /// MPINHO 13-aug-2019 BEGIN ///
-unsigned
-FUPool::getFUFuseCap(int fu_idx)
+std::string
+FUPool::getFUName(int fu_idx)
 {
-    return funcUnits[fu_idx]->getFuseCap();
+    return funcUnits[fu_idx]->name;
+}
+
+unsigned
+FUPool::getFUIssueCap(int fu_idx)
+{
+    return funcUnits[fu_idx]->getIssueCap();
+}
+
+void
+FUPool::useFUIssueCap(int fu_idx)
+{
+    funcUnits[fu_idx]->useIssueCap();
+}
+
+unsigned
+FUPool::getFUWidthCap(int fu_idx)
+{
+    return funcUnits[fu_idx]->getWidthCap();
+}
+
+void
+FUPool::useFUWidthCap(int fu_idx,
+                      unsigned width)
+{
+    funcUnits[fu_idx]->useWidthCap(width);
+}
+
+void
+FUPool::resetFUCaps()
+{
+    for (int i = 0; i < numFU; ++i) {
+        if (!unitBusy[i]) {
+            funcUnits[i]->resetIssueCap();
+            funcUnits[i]->resetWidthCap();
+        }
+    }
 }
 
 bool
 FUPool::hasCapability(int fu_idx, OpClass capability)
 {
     return funcUnits[fu_idx]->provides(capability);
+}
+
+void
+FUPool::updateStats()
+{
+    int usedSimd = 0;
+    // Record stats for used Simd FUs.
+    for (int i = 0; i < numFU; ++i) {
+        if (funcUnits[i]->isSimd() &&
+            funcUnits[i]->getUsedIssueCap() > 0) {
+            statSimdIssueUsed[usedSimd]
+                .sample(funcUnits[i]->getUsedIssueCap());
+            statSimdWidthUsed[usedSimd]
+                .sample(funcUnits[i]->getUsedWidthCap());
+
+            DPRINTF(FU, "SimdFU(*%d*). Issued: *%d*. Width: *%d*.\n",
+                    usedSimd,
+                    funcUnits[i]->getUsedIssueCap(),
+                    funcUnits[i]->getUsedWidthCap());
+
+            ++usedSimd;
+        }
+    }
+
+    statSimdFUUsed.sample(usedSimd);
+    DPRINTF(FU, "TotalSimdFU used simd FU used: *%d*.\n",
+            usedSimd);
+
+    // Record remaining Simd FUs as unused.
+    for (int i = usedSimd; i < numSimdFU; ++i) {
+        statSimdIssueUsed[i].sample(0);
+        statSimdWidthUsed[i].sample(0);
+    }
 }
 /// MPINHO 13-aug-2019 END ///
 

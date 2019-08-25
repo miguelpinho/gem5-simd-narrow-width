@@ -459,10 +459,14 @@ public:
     void setWidth(WidthInfo _width) { width = _width; }
 
     /** Get the instruction width information. */
+    // TODO: change this to reference.
     WidthInfo getWidth() { return width; }
 
     /** Get the instruction width class. */
     WidthClass getWidthClass() { return width.getWidthClass(); }
+
+    /** Get width value. */
+    int getWidthVal();
 
     /** Get the instruction elem size. */
     VecElemSize getElemSize() { return width.getElemSize(); }

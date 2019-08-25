@@ -53,6 +53,7 @@
 #include "cpu/o3/inst_queue.hh"
 #include "debug/IQ.hh"
 #include "debug/IQFuse.hh" /// MPINHO 13-aug-2019 ///
+#include "debug/Width.hh" /// MPINHO 21-aug-2019 ///
 #include "enums/OpClass.hh"
 #include "enums/VecElemSize.hh" /// MPINHO 30-jul-2019 ///
 #include "enums/WidthClass.hh" /// MPINHO 29-jul-2019 ///
@@ -923,6 +924,10 @@ InstructionQueue<Impl>::scheduleReadyInsts()
         addReadyMemInst(mem_inst);
     }
 
+    /// MPINHO 23-aug-2019 BEGIN ///
+    fuPool->resetFUCaps();
+    /// MPINHO 23-aug-2019 END ///
+
     // Have iterator to head of the list
     // While I haven't exceeded bandwidth or reached the end of the list,
     // Try to get a FU that can do what this op needs.
@@ -1018,6 +1023,23 @@ InstructionQueue<Impl>::scheduleReadyInsts()
                     fuPool->freeUnitNextCycle(idx);
                 }
             }
+
+            /// MPINHO 23-aug-2019 BEGIN ///
+            // Register issued inst and its width.
+            if (op_class != No_OpClass) {
+                DPRINTF(Width, "Issuing instruction \"%s\" with width"
+                        " %d to a FU (%s) with available issueCap %d"
+                        " and widthCap %d.\n",
+                        issuing_inst->staticInst->disassemble(
+                            issuing_inst->instAddr()),
+                        issuing_inst->getWidthVal(),
+                        fuPool->getFUName(idx),
+                        fuPool->getFUIssueCap(idx),
+                        fuPool->getFUWidthCap(idx));
+                fuPool->useFUIssueCap(idx);
+                fuPool->useFUWidthCap(idx, issuing_inst->getWidthVal());
+            }
+            /// MPINHO 23-aug-2019 END ///
 
             DPRINTF(IQ, "Thread %i: Issuing instruction PC %s "
                     "[sn:%lli]\n",
@@ -1266,6 +1288,10 @@ InstructionQueue<Impl>::scheduleReadyInsts()
 
     numIssuedDist.sample(total_issued);
     iqInstsIssued+= total_issued;
+
+    /// MPINHO 23-aug-2019 BEGIN ///
+    fuPool->updateStats();
+    /// MPINHO 23-aug-2019 END ///
 
     // If we issued any instructions, tell the CPU we had activity.
     // @todo If the way deferred memory instructions are handeled due to
@@ -1807,6 +1833,12 @@ InstructionQueue<Impl>::addIfReady(const DynInstPtr &inst)
         // As non-memory instruction is ready to issue, generate width
         // information.
         widthDecoder.addWidthInfo(inst);
+
+        // Generate width trace.
+        DPRINTF(Width, "Width (opclass:%s): %s [sn:%lli].\n",
+                Enums::OpClassStrings[static_cast<int>(op_class)],
+                inst->getWidth().to_string(),
+                inst->seqNum);
         /// MPINHO 07-aug-2019 END ///
 
         readyInsts[op_class].push(inst);
