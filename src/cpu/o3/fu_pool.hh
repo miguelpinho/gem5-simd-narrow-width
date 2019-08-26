@@ -128,6 +128,7 @@ class FUPool : public SimObject
 
     /// MPINHO 23-aug-2019 BEGIN ///
     /** Number of SIMD FUs. */
+    int numFPFU;
     int numSimdFU;
     int simdIssueCap, simdWidthCap;
     /// MPINHO 23-aug-2019 END ///
@@ -144,6 +145,10 @@ class FUPool : public SimObject
     Stats::Distribution statSimdFUExtra;
     Stats::VectorDistribution statSimdFUIssueUsed;
     Stats::VectorDistribution statSimdFUWidthUsed;
+
+    Stats::Distribution statFPFUUsed;
+
+    Stats::Distribution statFPSimdFUUsed;
 
   public:
     typedef FUPoolParams Params;

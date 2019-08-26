@@ -54,6 +54,7 @@ class O3_ARM_v7a_FP(FUDesc):
                OpDesc(opClass='FloatMisc', opLat=3) ]
     count = 4
     widthCap = 128
+    floatp = True
 
 # SIMD instructions
 class O3_ARM_v7a_AdvSimd(FUDesc):
