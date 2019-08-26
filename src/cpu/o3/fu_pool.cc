@@ -188,7 +188,7 @@ FUPool::regStats()
         .desc("dist of insts issued for each Simd FU")
         ;
     statSimdWidthUsed
-        .init(numFU, 0, maxWidthCap, 8)
+        .init(numSimdFU, 0, maxWidthCap, 8)
         .name(name() + ".width_used_fu")
         .desc("dist of width used by each Simd FU")
         ;
