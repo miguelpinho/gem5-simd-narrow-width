@@ -383,6 +383,7 @@ FUPool::updateStats()
     statSimdFUUsed.sample(usedSimd);
     statSimdFUIssued.sample(issuedSimd);
     statSimdFUTotalWidth.sample(totalWidthSimd);
+    statSimdFUExtra.sample(extraSimd);
     DPRINTF(FU, "TotalSimdFU used simd FU used: *%d*."
                 " Total issued: *%d*."" Total width: *%d*."
                 " Extra issued: *%d*.\n",
