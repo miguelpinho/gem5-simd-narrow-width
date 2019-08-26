@@ -129,6 +129,7 @@ class FUPool : public SimObject
     /// MPINHO 23-aug-2019 BEGIN ///
     /** Number of SIMD FUs. */
     int numSimdFU;
+    int simdIssueCap, simdWidthCap;
     /// MPINHO 23-aug-2019 END ///
 
     /** Functional units. */
@@ -136,13 +137,13 @@ class FUPool : public SimObject
 
     typedef std::vector<FuncUnit *>::iterator fuListIterator;
 
-    /** Max Caps. */
-    int maxIssueCap, maxWidthCap;
-
     /** Stats. */
     Stats::Distribution statSimdFUUsed;
-    Stats::VectorDistribution statSimdIssueUsed;
-    Stats::VectorDistribution statSimdWidthUsed;
+    Stats::Distribution statSimdFUIssued;
+    Stats::Distribution statSimdFUTotalWidth;
+    Stats::Distribution statSimdFUExtra;
+    Stats::VectorDistribution statSimdFUIssueUsed;
+    Stats::VectorDistribution statSimdFUWidthUsed;
 
   public:
     typedef FUPoolParams Params;
