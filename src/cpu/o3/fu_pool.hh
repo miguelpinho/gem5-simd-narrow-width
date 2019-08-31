@@ -141,10 +141,10 @@ class FUPool : public SimObject
     /** Stats. */
     Stats::Distribution statSimdFUUsed;
     Stats::Distribution statSimdFUIssued;
-    Stats::Distribution statSimdFUTotalWidth;
+    Stats::Distribution statSimdFUWidth;
     Stats::Distribution statSimdFUExtra;
-    Stats::VectorDistribution statSimdFUIssueUsed;
-    Stats::VectorDistribution statSimdFUWidthUsed;
+    Stats::VectorDistribution statSimdFUIssuePartial;
+    Stats::VectorDistribution statSimdFUWidthPartial;
 
     Stats::Distribution statFPFUUsed;
 
