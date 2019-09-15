@@ -168,6 +168,8 @@ class WidthDecoder
     /////////////////////////
     static constexpr int Num_VecElemSize =
         static_cast<int>(VecElemSize::Num_VecElemSize);
+    static constexpr int Num_WidthClass =
+        static_cast<int>(WidthClass::Num_WidthClass);
     static const std::array<const int, Num_VecElemSize> Bits_VecElemSize;
     static const std::array<const VecElemSize, 4> SizeToVecElemSize;
 
@@ -175,13 +177,20 @@ class WidthDecoder
     // Stats
     /////////////////////////
     /** Stat for width of vector operand elements, by vector element size. */
-    std::array<Stats::Distribution, Num_VecElemSize> statVectorOpElemWidth;
+    std::array<Stats::Distribution, Num_VecElemSize>
+      statVectorOpElemWidthBySize;
     /** Stat for total vector operand width, by vector element size. */
-    std::array<Stats::Distribution, Num_VecElemSize> statVectorOpTotalWidth;
+    std::array<Stats::Distribution, Num_VecElemSize>
+      statVectorOpTotalWidthBySize;
     /** Stat for width of vector inst elements, by vector element size. */
-    std::array<Stats::Distribution, Num_VecElemSize> statVectorInstElemWidth;
+    std::array<Stats::Distribution, Num_VecElemSize>
+      statVectorInstElemWidthBySize;
     /** Stat for total vector inst width, by vector element size. */
-    std::array<Stats::Distribution, Num_VecElemSize> statVectorInstTotalWidth;
+    std::array<Stats::Distribution, Num_VecElemSize>
+      statVectorInstTotalWidthBySize;
+
+    /** Stat for total vector inst width, by width class. */
+    Stats::VectorDistribution statVectorInstTotalWidthByClass;
 
     /** Sample width distribution for vector operands. */
     void sampleVecOp(VecWidthCode &mask, uint8_t size);

@@ -187,32 +187,46 @@ WidthDecoder<Impl>::regStats()
     using namespace Stats;
 
     for (int i = 0; i < Num_VecElemSize; i++) {
-        statVectorOpElemWidth[i]
+        statVectorOpElemWidthBySize[i]
             .init(0, Bits_VecElemSize[i], 1)
-            .name(name() + ".statVectorOpElemWidth_" + VecElemSizeStrings[i])
+            .name(name() + ".statVectorOpElemWidthBySize_" +
+                  VecElemSizeStrings[i])
             .desc("Width of vector operand elements, by vector element size.")
-            .prereq(statVectorOpElemWidth[i])
+            .prereq(statVectorOpElemWidthBySize[i])
             ;
-        statVectorOpTotalWidth[i]
+        statVectorOpTotalWidthBySize[i]
             .init(0, VecSizeBits, 1)
-            .name(name() + ".statVectorOpTotalWidth" + VecElemSizeStrings[i])
+            .name(name() + ".statVectorOpTotalWidthBySize" +
+                  VecElemSizeStrings[i])
             .desc("Total width of vector operand elements,"
                   " by vector element size.")
-            .prereq(statVectorOpTotalWidth[i])
+            .prereq(statVectorOpTotalWidthBySize[i])
             ;
-        statVectorInstElemWidth[i]
+        statVectorInstElemWidthBySize[i]
             .init(0, Bits_VecElemSize[i], 1)
-            .name(name() + ".statVectorInstElemWidth" + VecElemSizeStrings[i])
+            .name(name() + ".statVectorInstElemWidthBySize" +
+                  VecElemSizeStrings[i])
             .desc("Width of vector inst elements, by vector element size.")
-            .prereq(statVectorInstElemWidth[i])
+            .prereq(statVectorInstElemWidthBySize[i])
             ;
-        statVectorInstTotalWidth[i]
+        statVectorInstTotalWidthBySize[i]
             .init(0, VecSizeBits, 1)
-            .name(name() + ".statVectorInstTotalWidth" + VecElemSizeStrings[i])
-            .desc("Total width of vector inst elements,"
+            .name(name() + ".statVectorInstTotalWidthBySize" +
+                  VecElemSizeStrings[i])
+            .desc("Total width of vector inst,"
                   " by vector element size.")
-            .prereq(statVectorInstTotalWidth[i])
+            .prereq(statVectorInstTotalWidthBySize[i])
             ;
+    }
+
+    statVectorInstTotalWidthByClass
+        .init(Num_WidthClass, 0, VecSizeBits, 8)
+        .name(name() + ".statVectorInstTotalWidthByClass")
+        .desc("Total width of vector isnt,"
+              " by width class.")
+        ;
+    for (int i = 0; i < Num_WidthClass; i++) {
+        statVectorInstTotalWidthByClass.subname(i, WidthClassStrings[i]);
     }
 }
 
@@ -285,8 +299,13 @@ template <class Impl>
 void
 WidthDecoder<Impl>::addWidthInfo(const DynInstPtr &inst)
 {
-    inst->setWidth(decode(inst));
+    WidthInfo width = decode(inst);
+    inst->setWidth(width);
 
+    if (width.hasWidthInfo()) {
+        statVectorInstTotalWidthByClass[(int) width.getWidthClass()]
+            .sample(width.getWidthVal());
+    }
     DPRINTF(WidthDecoder, "Instruction \"%s\" was assigned"
             " width information: \"%s\".\n",
             inst->staticInst->disassemble(
@@ -1033,10 +1052,10 @@ WidthDecoder<Impl>::sampleVecOp(VecWidthCode &mask, uint8_t size)
     VecElemSize eSize = SizeToVecElemSize[size];
 
     for (int i = 0; i < mask.numElem(); i++) {
-        statVectorOpElemWidth[(int) eSize].sample(mask.get(i));
+        statVectorOpElemWidthBySize[(int) eSize].sample(mask.get(i));
     }
 
-    statVectorOpTotalWidth[(int) eSize].sample(mask.totalWidth());
+    statVectorOpTotalWidthBySize[(int) eSize].sample(mask.totalWidth());
 }
 
 template <class Impl>
@@ -1046,10 +1065,10 @@ WidthDecoder<Impl>::sampleVecInst(VecWidthCode &mask, uint8_t size)
     VecElemSize eSize = SizeToVecElemSize[size];
 
     for (int i = 0; i < mask.numElem(); i++) {
-        statVectorInstElemWidth[(int) eSize].sample(mask.get(i));
+        statVectorInstElemWidthBySize[(int) eSize].sample(mask.get(i));
     }
 
-    statVectorInstTotalWidth[(int) eSize].sample(mask.totalWidth());
+    statVectorInstTotalWidthBySize[(int) eSize].sample(mask.totalWidth());
 }
 
 #endif // __CPU_O3_WIDTH_DECODER_IMPL_HH__

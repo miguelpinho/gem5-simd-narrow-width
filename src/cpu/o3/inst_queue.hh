@@ -562,9 +562,6 @@ class InstructionQueue
     Stats::Vector statFuseSuccess;
     Stats::Formula statFuseSuccessNorm;
     Stats::Formula statFuseSuccessNormTotal;
-    /// MPTODO ///
-    /* Number of cycles vector instructions are issued. */
-    Stats::Scalar cyclesVecActive;
     /// MPINHO 30-jul-2019 END ///
 
    public:
