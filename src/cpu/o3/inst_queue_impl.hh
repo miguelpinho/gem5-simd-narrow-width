@@ -448,11 +448,6 @@ InstructionQueue<Impl>::regStats()
         statFuseSuccessNorm.subname(i, WidthClassStrings[i]);
         statFuseSuccessNormTotal.subname(i, WidthClassStrings[i]);
     }
-
-    cyclesVecActive
-        .name(name() + ".cyclesVecActive")
-        .desc("Cycles with activity in the vector ALU")
-        ;
     /// MPINHO 30-jul-2019 END ///
 
     for (ThreadID tid = 0; tid < numThreads; tid++) {
