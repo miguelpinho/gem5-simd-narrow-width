@@ -302,10 +302,9 @@ WidthDecoder<Impl>::addWidthInfo(const DynInstPtr &inst)
     WidthInfo width = decode(inst);
     inst->setWidth(width);
 
-    if (width.hasWidthInfo()) {
-        statVectorInstTotalWidthByClass[(int) width.getWidthClass()]
-            .sample(width.getWidthVal());
-    }
+    statVectorInstTotalWidthByClass[(int) inst->getWidthClass()]
+        .sample(inst->getWidthVal());
+
     DPRINTF(WidthDecoder, "Instruction \"%s\" was assigned"
             " width information: \"%s\".\n",
             inst->staticInst->disassemble(
