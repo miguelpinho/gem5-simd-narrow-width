@@ -1024,10 +1024,12 @@ InstructionQueue<Impl>::scheduleReadyInsts()
             // Register issued inst and its width.
             if (op_class != No_OpClass) {
                 DPRINTF(IssueWidth, "Will issue instruction \"%s\""
-                        " with width %d to a FU (%d) with available"
-                        " issueCap %d and widthCap %d.\n",
+                        " of class %s and with width %d to a FU (%d)"
+                        " with available issueCap %d and widthCap %d.\n",
                         issuing_inst->staticInst->disassemble(
                             issuing_inst->instAddr()),
+                        WidthClassStrings[
+                            (int) issuing_inst->getWidthClass()],
                         issuing_inst->getWidthVal(),
                         idx,
                         fuPool->getFUIssueCap(idx),
