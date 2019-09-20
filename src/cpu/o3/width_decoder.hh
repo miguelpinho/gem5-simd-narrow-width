@@ -162,6 +162,10 @@ class WidthDecoder
     WidthInfo decodeNeon2RegMisc(const DynInstPtr &inst);
     /** Decode Neon AcrossLanes instruction width. */
     WidthInfo decodeNeonAcrossLanes(const DynInstPtr &inst);
+    /** Decode Neon ShiftByImm instruction width. */
+    WidthInfo decodeNeonShiftByImm(const DynInstPtr &inst);
+    /** Decode Neon ZipUzpTrn instruction width. */
+    WidthInfo decodeNeonZipUzpTrn(const DynInstPtr &inst);
 
     /////////////////////////
     // Consts
