@@ -379,7 +379,7 @@ WidthDecoder<Impl>::decode(const DynInstPtr &inst)
                                         " inst decoded: %s.\n",
                                         inst->staticInst->disassemble(
                                             inst->instAddr()));
-                                return(WidthInfo(WidthClass::NoInfo));
+                                return(WidthInfo(WidthClass::SimdNoInfo));
                             } else if (bits(machInst, 23) == 1) {
                                 // Nop.
                                 return(WidthInfo(WidthClass::NoInfo));
@@ -391,7 +391,7 @@ WidthDecoder<Impl>::decode(const DynInstPtr &inst)
                                             " inst decoded: %s.\n",
                                             inst->staticInst->disassemble(
                                                 inst->instAddr()));
-                                    return(WidthInfo(WidthClass::NoInfo));
+                                    return(WidthInfo(WidthClass::SimdNoInfo));
                                 } else {
                                     // Neon NeonModImm.
                                     DPRINTF(WidthDecoderDecode,
@@ -399,7 +399,7 @@ WidthDecoder<Impl>::decode(const DynInstPtr &inst)
                                             " inst decoded: %s.\n",
                                             inst->staticInst->disassemble(
                                                 inst->instAddr()));
-                                    return(WidthInfo(WidthClass::NoInfo));
+                                    return(WidthInfo(WidthClass::SimdNoInfo));
                                 }
                             }
                         } else if (bits(machInst, 21) == 1) {
@@ -418,7 +418,7 @@ WidthDecoder<Impl>::decode(const DynInstPtr &inst)
                                         " inst decoded: %s.\n",
                                         inst->staticInst->disassemble(
                                             inst->instAddr()));
-                                return(WidthInfo(WidthClass::NoInfo));
+                                return(WidthInfo(WidthClass::SimdNoInfo));
                             } else if (bits(machInst, 20, 17) == 0x0) {
                                 // Neon 2RegMisc.
                                 DPRINTF(WidthDecoderDecode,
@@ -448,7 +448,7 @@ WidthDecoder<Impl>::decode(const DynInstPtr &inst)
                                         " inst decoded: %s.\n",
                                         inst->staticInst->disassemble(
                                             inst->instAddr()));
-                                return(WidthInfo(WidthClass::NoInfo));
+                                return(WidthInfo(WidthClass::SimdNoInfo));
                             }
                         } else if (bits(machInst, 29) == 1) {
                             // Neon Ext.
@@ -456,7 +456,7 @@ WidthDecoder<Impl>::decode(const DynInstPtr &inst)
                                     "Neon Ext inst decoded: %s.\n",
                                     inst->staticInst->disassemble(
                                         inst->instAddr()));
-                            return(WidthInfo(WidthClass::NoInfo));
+                            return(WidthInfo(WidthClass::SimdNoInfo));
                         } else if (bits(machInst, 11) == 1) {
                             // Neon ZipUzpTrn.
                             DPRINTF(WidthDecoderDecode,
@@ -464,7 +464,7 @@ WidthDecoder<Impl>::decode(const DynInstPtr &inst)
                                     " inst decoded: %s.\n",
                                     inst->staticInst->disassemble(
                                         inst->instAddr()));
-                            return(WidthInfo(WidthClass::NoInfo));
+                            return(WidthInfo(WidthClass::SimdNoInfo));
                         } else if (bits(machInst, 23, 22) == 0x0) {
                             // NeonTblTbx.
                             DPRINTF(WidthDecoderDecode,
@@ -472,7 +472,7 @@ WidthDecoder<Impl>::decode(const DynInstPtr &inst)
                                     " inst decoded: %s.\n",
                                     inst->staticInst->disassemble(
                                         inst->instAddr()));
-                            return(WidthInfo(WidthClass::NoInfo));
+                            return(WidthInfo(WidthClass::SimdNoInfo));
                         }
                     }
                 } else if (bits(machInst, 31) == 0) {
@@ -482,7 +482,7 @@ WidthDecoder<Impl>::decode(const DynInstPtr &inst)
                             "AdvSimd Scalar inst decoded: %s.\n",
                             inst->staticInst->disassemble(
                                 inst->instAddr()));
-                    return(WidthInfo(WidthClass::NoInfo));
+                    return(WidthInfo(WidthClass::SimdNoInfo));
                 } else {
                     // Other AdvSimd inst.
                     DPRINTF(WidthDecoderDecode,
