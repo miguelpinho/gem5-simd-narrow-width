@@ -391,7 +391,7 @@ WidthDecoder<Impl>::decode(const DynInstPtr &inst)
                                             " inst decoded: %s.\n",
                                             inst->staticInst->disassemble(
                                                 inst->instAddr()));
-                                    return(WidthInfo(WidthClass::SimdNoInfo));
+                                    return decodeNeonShiftByImm(inst);
                                 } else {
                                     // Neon NeonModImm.
                                     DPRINTF(WidthDecoderDecode,
