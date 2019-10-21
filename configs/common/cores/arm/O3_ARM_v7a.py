@@ -36,8 +36,8 @@ class O3_ARM_v7a_Simple_Int(FUDesc):
 
 # Complex ALU instructions have a variable latencies
 class O3_ARM_v7a_Complex_Int(FUDesc):
-    opList = [ OpDesc(opClass='IntMult', opLat=3, pipelined=True),
-               OpDesc(opClass='IntDiv', opLat=12, pipelined=False),
+    opList = [ OpDesc(opClass='IntMult', opLat=4, pipelined=True),
+               OpDesc(opClass='IntDiv', opLat=8, pipelined=False),
                OpDesc(opClass='IprAccess', opLat=3, pipelined=True) ]
     count = 2
 
@@ -87,7 +87,7 @@ class O3_ARM_v7a_AdvSimd(FUDesc):
                OpDesc(opClass='FloatMultAcc', opLat=4),
                OpDesc(opClass='FloatMisc', opLat=3) ]
     count = 4
-    fuseCap = 2
+    fuseCap = 0
     widthCap = 128
     simd = True
 
