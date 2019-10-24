@@ -65,6 +65,7 @@ if 'O3CPU' in env['CPU_MODELS']:
 
     DebugFlag('CommitRate')
     DebugFlag('FU') ### MPINHO 25-aug-2019
+    DebugFlag('FUIdle') ### MPINHO 24-oct-2019
     DebugFlag('IEW')
     DebugFlag('IQ')
     DebugFlag('IQFuse') ### MPINHO 13-aug-2019
@@ -91,6 +92,7 @@ if 'O3CPU' in env['CPU_MODELS']:
     CompoundFlag('IQAll', [ 'IQ', 'IQFuse' ])
     CompoundFlag('WidthDecoderAll', [ 'WidthDecoder', 'WidthDecoderDecode',
         'WidthDecoderWidth' ])
+    CompoundFlag('FUAll', [ 'FU', 'FUIdle' ])
 
     SimObject('O3Checker.py')
     Source('checker.cc')

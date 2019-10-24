@@ -36,6 +36,12 @@ class FUPool(SimObject):
     cxx_header = "cpu/o3/fu_pool.hh"
     FUList = VectorParam.FUDesc("list of FU's for this pool")
 
+    ### MPINHO 23-oct-2019 BEGIN ###
+    # Power gating breakeven threshold
+    breakevenThreshold = Param.Int(150, "Power gating breakeven threshold "
+                                   "in clk cycles")
+    ### MPINHO 23-oct-2019 END ###
+
 class DefaultFUPool(FUPool):
     FUList = [ IntALU(), IntMultDiv(), FP_ALU(), FP_MultDiv(), ReadPort(),
                SIMD_Unit(), WritePort(), RdWrPort(), IprPort() ]
