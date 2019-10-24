@@ -45,6 +45,8 @@
 #include <sstream>
 
 #include "cpu/func_unit.hh"
+#include "debug/FU.hh"
+#include "debug/FUIdle.hh"
 
 using namespace std;
 
@@ -82,7 +84,8 @@ FUPool::~FUPool()
 
 // Constructor
 FUPool::FUPool(const Params *p)
-    : SimObject(p)
+    : SimObject(p),
+      breakevenTH(p->breakevenThreshold)
 {
     numFU = 0;
     numFPFU = 0;
@@ -176,6 +179,15 @@ FUPool::FUPool(const Params *p)
     for (int i = 0; i < numFU; i++) {
         unitBusy[i] = false;
     }
+
+    /// MPINHO 23-oct-2019 BEGIN ///
+    simdIdle.resize(numSimdFU);
+
+    for (int i = 0; i < numSimdFU; i++) {
+        simdIdle[i] = 0;
+    }
+    /// MPINHO 23-oct-2019 END ///
+
 }
 
 /// MPINHO 23-aug-2019 BEGIN ///
@@ -213,7 +225,7 @@ FUPool::regStats()
         .desc("dist of width used by each Simd FUs")
         ;
     for (int i = 0; i < numSimdFU; i++) {
-        std::stringstream ss;
+        std::ostringstream ss;
         ss << "(" << i << ")";
         statSimdFUIssuePartial.subname(i, ss.str());
         statSimdFUWidthPartial.subname(i, ss.str());
@@ -227,6 +239,13 @@ FUPool::regStats()
         .init(0, numSimdFU + numFPFU, 1)
         .name(name() + ".fp_simd_fu_used")
         .desc("dist of the number of FP+Simd FUs used")
+        ;
+
+    totalSimdIdle
+        .init(numSimdFU)
+        .name(name() + ".totalSimdIdle")
+        .desc("Counters for idle SIMD FU periods over the breakeven "
+              "threshold")
         ;
 }
 /// MPINHO 23-aug-2019 END ///
@@ -412,9 +431,34 @@ FUPool::updateStats()
     statFPSimdFUUsed.sample(usedFP + usedSimd);
 
     // Record remaining Simd FUs as unused.
-    for (int i = usedSimd; i < numSimdFU; ++i) {
+    for (int i = usedSimd; i < numSimdFU; i++) {
         statSimdFUIssuePartial[i].sample(0);
         statSimdFUWidthPartial[i].sample(0);
+    }
+
+    // Update Simd FUs idle counters.
+    for (int i = 0; i < usedSimd; i++) {
+        // Reset idle counter.
+        simdIdle[i] = 0;
+    }
+    for (int i = usedSimd; i < numSimdFU; i++) {
+        simdIdle[i]++;
+        if (simdIdle[i] > breakevenTH) {
+            totalSimdIdle[i]++;
+        }
+    }
+
+    if (DTRACE(FUIdle)) {
+        std::ostringstream ss_counters, ss_total;
+        for (int i = 0; i < numSimdFU; i++) {
+            ss_counters << "*" << simdIdle[i];
+            ss_total << "*" << (int) totalSimdIdle[i].value();
+        }
+
+        DPRINTF(FUIdle, "Idle counters: %s*."
+                    " Idle total: %s*.\n",
+                ss_counters.str(),
+                ss_total.str());
     }
 }
 /// MPINHO 13-aug-2019 END ///
