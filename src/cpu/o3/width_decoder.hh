@@ -87,6 +87,11 @@ class WidthDecoder
     vecSrcRegWidthMask(const DynInstPtr &inst, uint8_t q, uint8_t size,
                        uint8_t op);
 
+    /** Return width maks of one of the widened vector source registers. */
+    VecWidthCode
+    vecSrcRegWidthMaskWide(const DynInstPtr &inst, uint8_t q, uint8_t size,
+                           uint8_t op);
+
     /** Returns the width information for a given instruction. */
     void addWidthInfo(const DynInstPtr &inst);
 
@@ -111,6 +116,12 @@ class WidthDecoder
     VecWidthCode widthOp2VectorPair(const DynInstPtr &inst,
                                     uint8_t q, uint8_t size,
                                     uint8_t op1, uint8_t op2);
+    VecWidthCode widthOp2VectorLong(const DynInstPtr &inst,
+                                    uint8_t q, uint8_t size,
+                                    uint8_t op1, uint8_t op2);
+    VecWidthCode widthOp2VectorWide(const DynInstPtr &inst,
+                                    uint8_t q, uint8_t size,
+                                    uint8_t op1, uint8_t op2);
     VecWidthCode widthOpAcrossVector(const DynInstPtr &inst,
                                      uint8_t q, uint8_t size,
                                      uint8_t op);
@@ -127,7 +138,7 @@ class WidthDecoder
     template <int Size, typename Elem>
     VecWidthCode
     getWidthVecReg(const DynInstPtr &inst, int nElem, int nBits,
-                   uint8_t op);
+                   uint8_t op, int start = 0);
 
     /// MPINHO 08-may-2019 BEGIN ///
     ///////////////////
@@ -158,6 +169,8 @@ class WidthDecoder
     WidthInfo decode(const DynInstPtr &inst);
     /** Decode Neon 3Same instruction width. */
     WidthInfo decodeNeon3Same(const DynInstPtr &inst);
+    /** Decode Neon 3Same instruction width. */
+    WidthInfo decodeNeon3Diff(const DynInstPtr &inst);
     /** Decode Neon 2RegMisc instruction width. */
     WidthInfo decodeNeon2RegMisc(const DynInstPtr &inst);
     /** Decode Neon AcrossLanes instruction width. */
