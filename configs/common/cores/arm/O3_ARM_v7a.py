@@ -110,6 +110,7 @@ class O3_ARM_v7a_FUP(FUPool):
     FUList = [O3_ARM_v7a_Simple_Int(), O3_ARM_v7a_Complex_Int(),
               O3_ARM_v7a_Load(), O3_ARM_v7a_Store(), O3_ARM_v7a_FP(),
               O3_ARM_v7a_AdvSimd()]
+    breakevenThreshold = 150
 
 # Bi-Mode Branch Predictor
 class O3_ARM_v7a_BP(BiModeBP):
