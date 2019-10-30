@@ -854,7 +854,7 @@ WidthDecoder<Impl>::decodeNeon3Diff(const DynInstPtr &inst)
                 DPRINTF(WidthDecoderDecode,
                         "Neon ADDL inst decoded: %s. Size: %d, Q: %d.\n",
                         inst->staticInst->disassemble(inst->instAddr()),
-                        size, q);
+                        size+1, q);
                 return(WidthInfo(WidthClass::SimdPackingAlu,
                                  widthOp2VectorLong(inst, q, size+1, 2, 3),
                                  size+1));
@@ -866,7 +866,7 @@ WidthDecoder<Impl>::decodeNeon3Diff(const DynInstPtr &inst)
                 DPRINTF(WidthDecoderDecode,
                         "Neon ADDW inst decoded: %s. Size: %d, Q: %d.\n",
                         inst->staticInst->disassemble(inst->instAddr()),
-                        size, q);
+                        size+1, q);
                 return(WidthInfo(WidthClass::SimdPackingAlu,
                                  widthOp2VectorWide(inst, q, size+1, 2, 3),
                                  size+1));
@@ -878,7 +878,7 @@ WidthDecoder<Impl>::decodeNeon3Diff(const DynInstPtr &inst)
                 DPRINTF(WidthDecoderDecode,
                         "Neon SUBL inst decoded: %s. Size: %d, Q: %d.\n",
                         inst->staticInst->disassemble(inst->instAddr()),
-                        size, q);
+                        size+1, q);
                 return(WidthInfo(WidthClass::SimdPackingAlu,
                                  widthOp2VectorLong(inst, q, size+1, 2, 3),
                                  size+1));
@@ -890,7 +890,7 @@ WidthDecoder<Impl>::decodeNeon3Diff(const DynInstPtr &inst)
                 DPRINTF(WidthDecoderDecode,
                         "Neon SUBW inst decoded: %s. Size: %d, Q: %d.\n",
                         inst->staticInst->disassemble(inst->instAddr()),
-                        size, q);
+                        size+1, q);
                 return(WidthInfo(WidthClass::SimdPackingAlu,
                                  widthOp2VectorWide(inst, q, size+1, 2, 3),
                                  size+1));
@@ -902,7 +902,7 @@ WidthDecoder<Impl>::decodeNeon3Diff(const DynInstPtr &inst)
                 DPRINTF(WidthDecoderDecode,
                         "Neon ADDHN inst decoded: %s. Size: %d, Q: %d.\n",
                         inst->staticInst->disassemble(inst->instAddr()),
-                        size, q);
+                        size+1, q);
                 return(WidthInfo(WidthClass::SimdPackingAlu,
                                  widthOp2VectorRegl(inst, q, size+1, 2, 3),
                                  size+1));
@@ -914,7 +914,7 @@ WidthDecoder<Impl>::decodeNeon3Diff(const DynInstPtr &inst)
                 DPRINTF(WidthDecoderDecode,
                         "Neon ABAL inst decoded: %s. Size: %d, Q: %d.\n",
                         inst->staticInst->disassemble(inst->instAddr()),
-                        size, q);
+                        size+1, q);
                 return(WidthInfo(WidthClass::SimdPackingAlu,
                                  widthOp2VectorLong(inst, q, size+1, 2, 3),
                                  size+1));
@@ -926,7 +926,7 @@ WidthDecoder<Impl>::decodeNeon3Diff(const DynInstPtr &inst)
                 DPRINTF(WidthDecoderDecode,
                         "Neon SUBHN inst decoded: %s. Size: %d, Q: %d.\n",
                         inst->staticInst->disassemble(inst->instAddr()),
-                        size, q);
+                        size+1, q);
                 return(WidthInfo(WidthClass::SimdPackingAlu,
                                  widthOp2VectorRegl(inst, q, size+1, 2, 3),
                                  size+1));
@@ -938,7 +938,7 @@ WidthDecoder<Impl>::decodeNeon3Diff(const DynInstPtr &inst)
                 DPRINTF(WidthDecoderDecode,
                         "Neon ABDL inst decoded: %s. Size: %d, Q: %d.\n",
                         inst->staticInst->disassemble(inst->instAddr()),
-                        size, q);
+                        size+1, q);
                 return(WidthInfo(WidthClass::SimdPackingAlu,
                                  widthOp2VectorLong(inst, q, size+1, 2, 3),
                                  size+1));
@@ -950,7 +950,7 @@ WidthDecoder<Impl>::decodeNeon3Diff(const DynInstPtr &inst)
                 DPRINTF(WidthDecoderDecode,
                         "Neon MLAL inst decoded: %s. Size: %d, Q: %d.\n",
                         inst->staticInst->disassemble(inst->instAddr()),
-                        size, q);
+                        size+1, q);
                 return(WidthInfo(WidthClass::SimdPackingMult,
                                  widthOp2VectorLong(inst, q, size+1, 2, 3),
                                  size+1));
@@ -962,7 +962,7 @@ WidthDecoder<Impl>::decodeNeon3Diff(const DynInstPtr &inst)
                 DPRINTF(WidthDecoderDecode,
                         "Neon SQDMLAL inst decoded: %s. Size: %d, Q: %d.\n",
                         inst->staticInst->disassemble(inst->instAddr()),
-                        size, q);
+                        size+1, q);
                 return(WidthInfo(WidthClass::SimdPackingMult,
                                  widthOp2VectorLong(inst, q, size+1, 2, 3),
                                  size+1));
@@ -974,7 +974,7 @@ WidthDecoder<Impl>::decodeNeon3Diff(const DynInstPtr &inst)
                 DPRINTF(WidthDecoderDecode,
                         "Neon MLSL inst decoded: %s. Size: %d, Q: %d.\n",
                         inst->staticInst->disassemble(inst->instAddr()),
-                        size, q);
+                        size+1, q);
                 return(WidthInfo(WidthClass::SimdPackingMult,
                                  widthOp2VectorLong(inst, q, size+1, 2, 3),
                                  size+1));
@@ -986,7 +986,7 @@ WidthDecoder<Impl>::decodeNeon3Diff(const DynInstPtr &inst)
                 DPRINTF(WidthDecoderDecode,
                         "Neon SQDMLSL inst decoded: %s. Size: %d, Q: %d.\n",
                         inst->staticInst->disassemble(inst->instAddr()),
-                        size, q);
+                        size+1, q);
                 return(WidthInfo(WidthClass::SimdPackingMult,
                                  widthOp2VectorLong(inst, q, size+1, 2, 3),
                                  size+1));
@@ -998,7 +998,7 @@ WidthDecoder<Impl>::decodeNeon3Diff(const DynInstPtr &inst)
                 DPRINTF(WidthDecoderDecode,
                         "Neon MULL inst decoded: %s. Size: %d, Q: %d.\n",
                         inst->staticInst->disassemble(inst->instAddr()),
-                        size, q);
+                        size+1, q);
                 return(WidthInfo(WidthClass::SimdPackingMult,
                                  widthOp2VectorLong(inst, q, size+1, 2, 3),
                                  size+1));
@@ -1010,7 +1010,7 @@ WidthDecoder<Impl>::decodeNeon3Diff(const DynInstPtr &inst)
                 DPRINTF(WidthDecoderDecode,
                         "Neon SQDMULL inst decoded: %s. Size: %d, Q: %d.\n",
                         inst->staticInst->disassemble(inst->instAddr()),
-                        size, q);
+                        size+1, q);
                 return(WidthInfo(WidthClass::SimdPackingMult,
                                  widthOp2VectorLong(inst, q, size+1, 2, 3),
                                  size+1));
@@ -1239,6 +1239,7 @@ WidthDecoder<Impl>::decodeNeonShiftByImm(const DynInstPtr &inst)
 
     uint8_t immh3 = bits(machInst, 22);
     uint8_t immh3_q = (immh3 << 1) | q;
+    uint8_t op_u = (bits(machInst, 12) << 1) | u;
     uint8_t size = findMsbSet(immh);
 
     switch (opcode) {
@@ -1304,6 +1305,94 @@ WidthDecoder<Impl>::decodeNeonShiftByImm(const DynInstPtr &inst)
                 }
             }
             break;
+        case 0x0c:
+            if (u && !(immh3_q == 0x2 || op_u == 0x0)) {
+                    // SqshluDX, SqshluQX
+                    DPRINTF(WidthDecoderDecode,
+                            "Neon SQSHLU inst decoded: %s. Size: %d, Q: %d.\n",
+                            inst->staticInst->disassemble(inst->instAddr()),
+                            size, q);
+                    return(WidthInfo(WidthClass::SimdPackingAlu,
+                                    widthOp1VectorRegl(inst, q, size, 2),
+                                                       size));
+            }
+            break;
+        case 0x0e:
+            if (!(immh3_q == 0x2 || op_u == 0x0)) {
+                    // UqshlDX, UqshlQX, SqshlDX, SqshlQX
+                    DPRINTF(WidthDecoderDecode,
+                            "Neon QSHL inst decoded: %s. Size: %d, Q: %d.\n",
+                            inst->staticInst->disassemble(inst->instAddr()),
+                            size, q);
+                    return(WidthInfo(WidthClass::SimdPackingAlu,
+                                    widthOp1VectorRegl(inst, q, size, 2),
+                                                       size));
+            }
+            break;
+        case 0x10:
+            if (!(immh3)) {
+                    // SqshrunX, Sqshrun2X, ShrnX, Shrn2X
+                    DPRINTF(WidthDecoderDecode,
+                            "Neon %s inst decoded: %s. Size: %d, Q: %d.\n",
+                            (u) ? "SQSHRUN" : "SHRN",
+                            inst->staticInst->disassemble(inst->instAddr()),
+                            size+1, q);
+                    return(WidthInfo(WidthClass::SimdPackingAlu,
+                                    widthOp1VectorRegl(inst, q, size+1, 2),
+                                                       size+1));
+            }
+            break;
+        case 0x11:
+            if (!(immh3)) {
+                    // SqrshrunX, Sqeshrun2X, RshrnX, Rshrn2X
+                    DPRINTF(WidthDecoderDecode,
+                            "Neon %s inst decoded: %s. Size: %d, Q: %d.\n",
+                            (u) ? "RSQSHRUN" : "RSHRN",
+                            inst->staticInst->disassemble(inst->instAddr()),
+                            size+1, q);
+                    return(WidthInfo(WidthClass::SimdPackingAlu,
+                                    widthOp1VectorRegl(inst, q, size+1, 2),
+                                                       size+1));
+            }
+            break;
+        case 0x12:
+            if (!(immh3)) {
+                    // UqshrnX, Uqshrn2X, SqshrnX, Sqshrn2X
+                    DPRINTF(WidthDecoderDecode,
+                            "Neon %s inst decoded: %s. Size: %d, Q: %d.\n",
+                            (u) ? "UQSHRN" : "SQSHRN",
+                            inst->staticInst->disassemble(inst->instAddr()),
+                            size+1, q);
+                    return(WidthInfo(WidthClass::SimdPackingAlu,
+                                    widthOp1VectorRegl(inst, q, size+1, 2),
+                                                       size+1));
+            }
+            break;
+        case 0x13:
+            if (!(immh3)) {
+                    // UqrshrnX, Uqrshrn2X, SqrshrnX, Sqrshrn2X
+                    DPRINTF(WidthDecoderDecode,
+                            "Neon %s inst decoded: %s. Size: %d, Q: %d.\n",
+                            (u) ? "UQRSHRN" : "SQRSHRN",
+                            inst->staticInst->disassemble(inst->instAddr()),
+                            size+1, q);
+                    return(WidthInfo(WidthClass::SimdPackingAlu,
+                                    widthOp1VectorRegl(inst, q, size+1, 2),
+                                                       size+1));
+            }
+            break;
+        case 0x14:
+            if (!(immh3)) {
+                    // UshllX, Ushll2X, SshllX, Sshll2X
+                    DPRINTF(WidthDecoderDecode,
+                            "Neon SHLL inst decoded: %s. Size: %d, Q: %d.\n",
+                            inst->staticInst->disassemble(inst->instAddr()),
+                            size+1, q);
+                    return(WidthInfo(WidthClass::SimdPackingAlu,
+                                    widthOp1VectorLong(inst, q, size+1, 2),
+                                                       size+1));
+            }
+            break;
         // TODO: Remaining shift insts.
     }
 
@@ -1323,6 +1412,25 @@ WidthDecoder<Impl>::widthOp1VectorRegl(const DynInstPtr &inst,
 
     sampleVecInst(maskOp1, size);
     DPRINTF(WidthDecoderWidth, "Instruction with 1 vector operand (regular)"
+            " has width mask %s (eSize=%i).\n",
+            maskOp1.to_string(),
+            size);
+    return maskOp1;
+}
+
+template <class Impl>
+VecWidthCode
+WidthDecoder<Impl>::widthOp1VectorLong(const DynInstPtr &inst,
+                                       uint8_t q, uint8_t size,
+                                       uint8_t op1)
+{
+    VecWidthCode maskOp1;
+
+    maskOp1 = vecSrcRegWidthMaskWide(inst, q, size, op1);
+    sampleVecOp(maskOp1, size);
+
+    sampleVecInst(maskOp1, size);
+    DPRINTF(WidthDecoderWidth, "Instruction with 1 vector operand (long)"
             " has width mask %s (eSize=%i).\n",
             maskOp1.to_string(),
             size);
@@ -1408,7 +1516,7 @@ WidthDecoder<Impl>::widthOp2VectorLong(const DynInstPtr &inst,
 
     maskRes = maskOp1.combine2OpRegl(maskOp2);
     sampleVecInst(maskRes, size);
-    DPRINTF(WidthDecoderWidth, "Instruction with 2 vectors operands (wide)"
+    DPRINTF(WidthDecoderWidth, "Instruction with 2 vectors operands (long)"
             " has width mask %s (eSize=%i).\n",
             maskRes.to_string(),
             size);
