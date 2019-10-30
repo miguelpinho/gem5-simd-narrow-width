@@ -138,7 +138,11 @@ class WidthDecoder
     template <int Size, typename Elem>
     VecWidthCode
     getWidthVecReg(const DynInstPtr &inst, int nElem, int nBits,
-                   uint8_t op, int start = 0);
+                   uint8_t op);
+    template <int Size, typename Elem>
+    VecWidthCode
+    getWidthVecRegWiden(const DynInstPtr &inst, int nElem, int nBits,
+                        uint8_t op, bool low);
 
     /// MPINHO 08-may-2019 BEGIN ///
     ///////////////////

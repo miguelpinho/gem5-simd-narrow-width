@@ -276,15 +276,17 @@ WidthDecoder<Impl>::vecSrcRegWidthMaskWide(const DynInstPtr &inst,
 {
     VecWidthCode mask;
 
+    bool low = q ? true : false;
+
     if (size == 1) {
         // low 8x8-bit (q = 0) or high 8x8-bit (q = 1)
-        mask = getWidthVecReg<16, int8_t>(inst, 8, 16, op, (q ? 8 : 0));
+        mask = getWidthVecRegWiden<16, int8_t>(inst, 8, 16, op, low);
     } else if (size == 2) {
         // low 4x16-bit (q = 0) or high 4x16-bit (q = 1)
-        mask = getWidthVecReg<8, int16_t>(inst, 4, 32, op, (q ? 4 : 0));
+        mask = getWidthVecRegWiden<8, int16_t>(inst, 4, 32, op, low);
     } else if (size == 3) {
         // low 2x32-bit (q = 0) or high 2x32-bit (q = 1)
-        mask = getWidthVecReg<4, int32_t>(inst, 2, 64, op, (q ? 2 : 0));
+        mask = getWidthVecRegWiden<4, int32_t>(inst, 2, 64, op, low);
     } else {
         panic("Unknown eSize %d.", size);
     }
@@ -301,9 +303,9 @@ template <class Impl>
 template <int Size, typename Elem>
 VecWidthCode
 WidthDecoder<Impl>::getWidthVecReg(const DynInstPtr &inst, int nElem,
-                                   int nBits, uint8_t op, int start)
+                                   int nBits, uint8_t op)
 {
-    assert((nElem+start) <= Size);
+    assert(nElem <= Size);
 
     VecWidthCode mask(Size, nBits);
 
@@ -314,7 +316,37 @@ WidthDecoder<Impl>::getWidthVecReg(const DynInstPtr &inst, int nElem,
 
     for (size_t i = 0; i < nElem; i++)
     {
-        int rsl = roundedPrcFunc((uint64_t) (int64_t) vsrc[start+i]);
+        int rsl = roundedPrcFunc((uint64_t) (int64_t) vsrc[i]);
+
+        DPRINTF(WidthDecoderWidth, "    Vec Lane %i: val=%d, rsl=%d\n",
+                i, (int) vsrc[i], rsl);
+
+        assert(rsl <= nBits);
+
+        mask.set(i, rsl);
+    }
+
+    return mask;
+}
+
+template <class Impl>
+template <int Size, typename Elem>
+VecWidthCode
+WidthDecoder<Impl>::getWidthVecRegWiden(const DynInstPtr &inst, int nElem,
+                                        int nBits, uint8_t op, bool low)
+{
+    VecWidthCode mask(nElem, nBits);
+
+    int bias = low ? 0 : nElem;
+
+    // FIXME: this count as an invalid access to the register, in terms of
+    // stats?? Create proxy access function?
+    const VecRegT<Elem, Size, true> &vsrc =
+        inst->readVecRegOperand(inst->staticInst.get(), op);
+
+    for (size_t i = 0; i < nElem; i++)
+    {
+        int rsl = roundedPrcFunc((uint64_t) (int64_t) vsrc[bias + i]);
 
         DPRINTF(WidthDecoderWidth, "    Vec Lane %i: val=%d, rsl=%d\n",
                 i, (int) vsrc[i], rsl);
@@ -1391,7 +1423,7 @@ WidthDecoder<Impl>::widthOp2VectorWide(const DynInstPtr &inst,
 {
     VecWidthCode maskOp1, maskOp2, maskRes;
 
-    maskOp1 = vecSrcRegWidthMask(inst, q, size, op1);
+    maskOp1 = vecSrcRegWidthMask(inst, 1, size, op1);
     maskOp2 = vecSrcRegWidthMaskWide(inst, q, size, op2);
     sampleVecOp(maskOp1, size);
     sampleVecOp(maskOp2, size);
