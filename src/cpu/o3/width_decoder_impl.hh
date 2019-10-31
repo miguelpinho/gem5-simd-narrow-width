@@ -1393,6 +1393,20 @@ WidthDecoder<Impl>::decodeNeonShiftByImm(const DynInstPtr &inst)
                                                     size+1));
             }
             break;
+        case 0x1c:
+            if (!(immh < 0x4 || immh3_q == 0x2)) {
+                uint8_t sizeCvt = (size & 0x1) ? 3 : 2;
+
+                // UcvtfDX, UcvtfQX, ScvtfDX, ScvtfQX
+                DPRINTF(WidthDecoderDecode,
+                        "Neon CVT inst decoded: %s. Size: %d, Q: %d.\n",
+                        inst->staticInst->disassemble(inst->instAddr()),
+                        sizeCvt, q);
+                return(WidthInfo(WidthClass::SimdPackingAlu,
+                                widthOp1VectorRegl(inst, q, sizeCvt, 2),
+                                                    sizeCvt));
+            }
+            break;
         // TODO: Remaining shift insts.
     }
 
