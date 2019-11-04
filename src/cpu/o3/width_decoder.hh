@@ -110,6 +110,9 @@ class WidthDecoder
     VecWidthCode widthOp1VectorLong(const DynInstPtr &inst,
                                     uint8_t q, uint8_t size,
                                     uint8_t op1);
+    VecWidthCode widthOp1VectorPairLong(const DynInstPtr &inst,
+                                        uint8_t q, uint8_t size,
+                                        uint8_t op1);
     VecWidthCode widthOp1VectorAcross(const DynInstPtr &inst,
                                       uint8_t q, uint8_t size,
                                       uint8_t op1);
@@ -186,6 +189,8 @@ class WidthDecoder
     WidthInfo decodeNeonShiftByImm(const DynInstPtr &inst);
     /** Decode Neon ZipUzpTrn instruction width. */
     WidthInfo decodeNeonZipUzpTrn(const DynInstPtr &inst);
+    /** Decode Neon TblTbx instruction width. */
+    WidthInfo decodeNeonTblTbx(const DynInstPtr &inst);
 
     /////////////////////////
     // Consts

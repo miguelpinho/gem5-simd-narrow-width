@@ -67,6 +67,7 @@ class VecWidthCode
 
         std::string to_string();
 
+        VecWidthCode generate1OpPairLong();
         VecWidthCode generate1OpAcross();
         VecWidthCode combine2OpRegl(const VecWidthCode& b);
         VecWidthCode combine2OpPair(const VecWidthCode& b);
