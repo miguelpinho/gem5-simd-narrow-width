@@ -110,6 +110,9 @@ class WidthDecoder
     VecWidthCode widthOp1VectorLong(const DynInstPtr &inst,
                                     uint8_t q, uint8_t size,
                                     uint8_t op1);
+    VecWidthCode widthOp1VectorPairLong(const DynInstPtr &inst,
+                                        uint8_t q, uint8_t size,
+                                        uint8_t op1);
     VecWidthCode widthOp1VectorAcross(const DynInstPtr &inst,
                                       uint8_t q, uint8_t size,
                                       uint8_t op1);
