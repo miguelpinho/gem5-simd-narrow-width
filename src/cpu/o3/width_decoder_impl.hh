@@ -1614,7 +1614,7 @@ WidthDecoder<Impl>::widthOp1VectorPairLong(const DynInstPtr &inst,
 {
     VecWidthCode maskOp1, maskRes;
 
-    maskOp1 = vecSrcRegWidthMaskWide(inst, q, size, op1);
+    maskOp1 = vecSrcRegWidthMask(inst, q, size, op1);
     sampleVecOp(maskOp1, size);
 
     maskRes = maskOp1.generate1OpPairLong();
