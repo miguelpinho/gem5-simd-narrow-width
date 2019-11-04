@@ -189,6 +189,8 @@ class WidthDecoder
     WidthInfo decodeNeonShiftByImm(const DynInstPtr &inst);
     /** Decode Neon ZipUzpTrn instruction width. */
     WidthInfo decodeNeonZipUzpTrn(const DynInstPtr &inst);
+    /** Decode Neon TblTbx instruction width. */
+    WidthInfo decodeNeonTblTbx(const DynInstPtr &inst);
 
     /////////////////////////
     // Consts

@@ -1536,6 +1536,39 @@ WidthDecoder<Impl>::decodeNeonShiftByImm(const DynInstPtr &inst)
 }
 
 template <class Impl>
+WidthInfo
+WidthDecoder<Impl>::decodeNeonTblTbx(const DynInstPtr &inst)
+{
+    using namespace ArmISAInst;
+
+    ArmISA::ExtMachInst machInst = inst->staticInst->machInst;
+
+    uint8_t q = bits(machInst, 30);
+    uint8_t switchVal = bits(machInst, 14, 12);
+
+    switch (switchVal) {
+        case 0x0:
+            DPRINTF(WidthDecoderDecode,
+                    "TBL (1 reg) inst decoded: %s. Q: %d.\n",
+                    inst->staticInst->disassemble(inst->instAddr()),
+                    q);
+            return(WidthInfo(WidthClass::SimdPackingAlu,
+                             widthOp1VectorRegl(inst, q, 1, 4), 1));
+            break;
+        case 0x2:
+            DPRINTF(WidthDecoderDecode,
+                    "TBL (2 reg) inst decoded: %s. Q: %d.\n",
+                    inst->staticInst->disassemble(inst->instAddr()),
+                    q);
+            return(WidthInfo(WidthClass::SimdPackingAlu,
+                             widthOp2VectorRegl(inst, q, 1, 4, 5), 1));
+            break;
+    }
+
+    return(WidthInfo(WidthClass::SimdNoInfo));
+}
+
+template <class Impl>
 VecWidthCode
 WidthDecoder<Impl>::widthOp1VectorRegl(const DynInstPtr &inst,
                                        uint8_t q, uint8_t size,
