@@ -520,7 +520,7 @@ WidthDecoder<Impl>::decode(const DynInstPtr &inst)
                                     "Neon Ext inst decoded: %s.\n",
                                     inst->staticInst->disassemble(
                                         inst->instAddr()));
-                            return(WidthInfo(WidthClass::SimdNoInfo));
+                            return decodeNeonExt(inst);
                         } else if (bits(machInst, 11) == 1) {
                             // Neon ZipUzpTrn.
                             DPRINTF(WidthDecoderDecode,
@@ -528,7 +528,7 @@ WidthDecoder<Impl>::decode(const DynInstPtr &inst)
                                     " inst decoded: %s.\n",
                                     inst->staticInst->disassemble(
                                         inst->instAddr()));
-                            return(WidthInfo(WidthClass::SimdNoInfo));
+                            return decodeNeonZipUzpTrn(inst);
                         } else if (bits(machInst, 23, 22) == 0x0) {
                             // NeonTblTbx.
                             DPRINTF(WidthDecoderDecode,
@@ -536,7 +536,7 @@ WidthDecoder<Impl>::decode(const DynInstPtr &inst)
                                     " inst decoded: %s.\n",
                                     inst->staticInst->disassemble(
                                         inst->instAddr()));
-                            return(WidthInfo(WidthClass::SimdNoInfo));
+                            return decodeNeonTblTbx(inst);
                         }
                     }
                 } else if (bits(machInst, 31) == 0) {
@@ -1537,6 +1537,104 @@ WidthDecoder<Impl>::decodeNeonShiftByImm(const DynInstPtr &inst)
 
 template <class Impl>
 WidthInfo
+WidthDecoder<Impl>::decodeNeonExt(const DynInstPtr &inst)
+{
+    using namespace ArmISAInst;
+
+    ArmISA::ExtMachInst machInst = inst->staticInst->machInst;
+
+    uint8_t q = bits(machInst, 30);
+    uint8_t op2 = bits(machInst, 23, 22);
+    uint8_t imm4 = bits(machInst, 14, 11);
+
+    uint8_t index = q ? imm4 : imm4 & 0x7;
+
+    if (op2 != 0 || (q == 0x0 && bits(imm4, 3) == 0x1))
+        return(WidthInfo(WidthClass::SimdNoInfo));
+
+    DPRINTF(WidthDecoderDecode,
+            "Neon EXT inst decoded: %s. Size: %d, Q: %d.\n",
+            inst->staticInst->disassemble(inst->instAddr()),
+            0x0, q);
+    return(WidthInfo(WidthClass::SimdPackingAlu,
+                    widthOp2VectorMix(inst, q, 0x0, 2, 3, index, 1),
+                    0x0));
+}
+
+template <class Impl>
+WidthInfo
+WidthDecoder<Impl>::decodeNeonZipUzpTrn(const DynInstPtr &inst)
+{
+    using namespace ArmISAInst;
+
+    ArmISA::ExtMachInst machInst = inst->staticInst->machInst;
+
+    uint8_t q = bits(machInst, 30);
+    uint8_t size = bits(machInst, 23, 22);
+    uint8_t opcode = bits(machInst, 14, 12);
+
+    switch (opcode) {
+        case 0x1:
+            DPRINTF(WidthDecoderDecode,
+                    "Neon UZP1 inst decoded: %s. Size: %d, Q: %d.\n",
+                    inst->staticInst->disassemble(inst->instAddr()),
+                    size, q);
+            return(WidthInfo(WidthClass::SimdPackingAlu,
+                            widthOp2VectorMix(inst, q, size, 2, 3, 1, 1),
+                            size));
+            break;
+        case 0x2:
+            DPRINTF(WidthDecoderDecode,
+                    "Neon TRN1 inst decoded: %s. Size: %d, Q: %d.\n",
+                    inst->staticInst->disassemble(inst->instAddr()),
+                    size, q);
+            return(WidthInfo(WidthClass::SimdPackingAlu,
+                            widthOp2VectorMix(inst, q, size, 2, 3, 1, 1),
+                            size));
+            break;
+        case 0x3:
+            DPRINTF(WidthDecoderDecode,
+                    "Neon ZIP1 inst decoded: %s. Size: %d, Q: %d.\n",
+                    inst->staticInst->disassemble(inst->instAddr()),
+                    size, q);
+            return(WidthInfo(WidthClass::SimdPackingAlu,
+                            widthOp2VectorJoin(inst, q, size, 2, 3, false),
+                            size));
+            break;
+        case 0x5:
+            DPRINTF(WidthDecoderDecode,
+                    "Neon UZP2 inst decoded: %s. Size: %d, Q: %d.\n",
+                    inst->staticInst->disassemble(inst->instAddr()),
+                    size, q);
+            return(WidthInfo(WidthClass::SimdPackingAlu,
+                            widthOp2VectorMix(inst, q, size, 2, 3, 0, 1),
+                            size));
+            break;
+        case 0x6:
+            DPRINTF(WidthDecoderDecode,
+                    "Neon TRN2 inst decoded: %s. Size: %d, Q: %d.\n",
+                    inst->staticInst->disassemble(inst->instAddr()),
+                    size, q);
+            return(WidthInfo(WidthClass::SimdPackingAlu,
+                            widthOp2VectorMix(inst, q, size, 2, 3, 0, 1),
+                            size));
+            break;
+        case 0x7:
+            DPRINTF(WidthDecoderDecode,
+                    "Neon ZIP2 inst decoded: %s. Size: %d, Q: %d.\n",
+                    inst->staticInst->disassemble(inst->instAddr()),
+                    size, q);
+            return(WidthInfo(WidthClass::SimdPackingAlu,
+                            widthOp2VectorJoin(inst, q, size, 2, 3, true),
+                            size));
+            break;
+    }
+
+    return(WidthInfo(WidthClass::SimdNoInfo));
+}
+
+template <class Impl>
+WidthInfo
 WidthDecoder<Impl>::decodeNeonTblTbx(const DynInstPtr &inst)
 {
     using namespace ArmISAInst;
@@ -1684,6 +1782,77 @@ WidthDecoder<Impl>::widthOp2VectorPair(const DynInstPtr &inst,
     maskRes = maskOp1.combine2OpPair(maskOp2);
     sampleVecInst(maskRes, size);
     DPRINTF(WidthDecoderWidth, "Instruction with 2 vectors operands (pairwise)"
+            " has width mask %s (eSize=%i).\n",
+            maskRes.to_string(),
+            size);
+    return maskRes;
+}
+
+template <class Impl>
+VecWidthCode
+WidthDecoder<Impl>::widthOp2VectorMix(const DynInstPtr &inst,
+                                      uint8_t q, uint8_t size,
+                                      uint8_t op1, uint8_t op2,
+                                      int idx, int stride)
+{
+    assert(stride > 0);
+
+    VecWidthCode maskOp1, maskOp2, maskRes;
+
+    maskOp1 = vecSrcRegWidthMask(inst, q, size, op1);
+    maskOp2 = vecSrcRegWidthMask(inst, q, size, op2);
+
+    maskRes = VecWidthCode(maskOp1.numElem(), maskOp1.elemBits());
+
+    /* Mix elements, using the (idx, stride) descriptor. */
+    int id_in, id_out = 0, nElem = maskOp1.numElem();
+    for (id_in = idx;
+         id_in < nElem && id_out < nElem;
+         id_in+=stride, id_out++) {
+        maskRes.set(id_out, maskOp1.get(id_in));
+    }
+    for (id_in-=nElem;
+         id_in < nElem && id_out < nElem;
+         id_in+=stride, id_out++) {
+        maskRes.set(id_out, maskOp1.get(id_in));
+    }
+
+    sampleVecOp(maskRes, size);
+    sampleVecInst(maskRes, size);
+    DPRINTF(WidthDecoderWidth, "Instruction with 2 vectors operands (mix)"
+            " has width mask %s (eSize=%i).\n",
+            maskRes.to_string(),
+            size);
+    return maskRes;
+}
+
+template <class Impl>
+VecWidthCode
+WidthDecoder<Impl>::widthOp2VectorJoin(const DynInstPtr &inst,
+                                       uint8_t q, uint8_t size,
+                                       uint8_t op1, uint8_t op2,
+                                       bool lower)
+{
+    VecWidthCode maskOp1, maskOp2, maskRes;
+
+    maskOp1 = vecSrcRegWidthMask(inst, q, size, op1);
+    maskOp2 = vecSrcRegWidthMask(inst, q, size, op2);
+
+    maskRes = VecWidthCode(maskOp1.numElem(), maskOp1.elemBits());
+
+    /* Mix elements, using the (idx, stride) descriptor. */
+    int id = 0, nElem = maskOp1.numElem();
+    int halfElem = nElem >> 1;
+    int start = lower ? 0        : halfElem;
+    int end   = lower ? halfElem : nElem;
+    for (int i = start; i < end; i++, id++) {
+        maskRes.set(id, maskOp1.get(i));
+        maskRes.set(id + halfElem, maskOp2.get(i));
+    }
+
+    sampleVecOp(maskRes, size);
+    sampleVecInst(maskRes, size);
+    DPRINTF(WidthDecoderWidth, "Instruction with 2 vectors operands (mix)"
             " has width mask %s (eSize=%i).\n",
             maskRes.to_string(),
             size);
