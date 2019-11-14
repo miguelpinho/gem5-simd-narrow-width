@@ -299,6 +299,81 @@ WidthDecoder<Impl>::vecSrcRegWidthMaskWide(const DynInstPtr &inst,
     return mask;
 }
 
+/**
+ * @todo Change to use resol granularity.
+ */
+template <class Impl>
+VecWidthCode
+WidthDecoder<Impl>::vecSrcRegWidthMaskIndex(const DynInstPtr &inst,
+                                            uint8_t size,
+                                            uint8_t op,
+                                            uint8_t idx)
+{
+    VecWidthCode mask;
+
+    if (size == 0) {
+        // 16x8-bit or (8x8-bit)
+        mask = getWidthVecRegIndex<16, int8_t>(inst, 8, op, idx);
+    } else if (size == 1) {
+        // 8x16-bit or (4x16-bit)
+        mask = getWidthVecRegIndex<8, int16_t>(inst, 16, op, idx);
+    } else if (size == 2) {
+        // 4x32-bit or (2x32-bit)
+        mask = getWidthVecRegIndex<4, int32_t>(inst, 32, op, idx);
+    } else if (size == 3) {
+        // 2x64-bit (or 1x64-bit)
+        mask = getWidthVecRegIndex<2, int64_t>(inst, 64, op, idx);
+    } else {
+        panic("Unknown eSize %d.", size);
+    }
+
+    DPRINTF(WidthDecoderWidth, "Source operand %d mask is %s (eSize=%i).\n",
+            op,
+            mask.to_string(),
+            size);
+
+    return mask;
+}
+
+/**
+ * @todo Change to use resol granularity.
+ */
+template <class Impl>
+VecWidthCode
+WidthDecoder<Impl>::vecSrcRegWidthMaskBroadcast(const DynInstPtr &inst,
+                                                uint8_t q, uint8_t size,
+                                                uint8_t op, uint8_t idx)
+{
+    VecWidthCode mask;
+
+    if (size == 0) {
+        // 16x8-bit or (8x8-bit)
+        mask = getWidthVecRegBroadcast<16, int8_t>(inst, (q ? 16 : 8), 8,
+                                                   op, idx);
+    } else if (size == 1) {
+        // 8x16-bit or (4x16-bit)
+        mask = getWidthVecRegBroadcast<8, int16_t>(inst, (q ? 8 : 4), 16,
+                                                   op, idx);
+    } else if (size == 2) {
+        // 4x32-bit or (2x32-bit)
+        mask = getWidthVecRegBroadcast<4, int32_t>(inst, (q ? 4 : 2), 32,
+                                                   op, idx);
+    } else if (size == 3) {
+        // 2x64-bit (or 1x64-bit)
+        mask = getWidthVecRegBroadcast<2, int64_t>(inst, (q ? 2 : 1), 64,
+                                                   op, idx);
+    } else {
+        panic("Unknown eSize %d.", size);
+    }
+
+    DPRINTF(WidthDecoderWidth, "Source operand %d mask is %s (eSize=%i).\n",
+            op,
+            mask.to_string(),
+            size);
+
+    return mask;
+}
+
 template <class Impl>
 template <int Size, typename Elem>
 VecWidthCode
@@ -332,6 +407,66 @@ WidthDecoder<Impl>::getWidthVecReg(const DynInstPtr &inst, int nElem,
 template <class Impl>
 template <int Size, typename Elem>
 VecWidthCode
+WidthDecoder<Impl>::getWidthVecRegIndex(const DynInstPtr &inst,
+                                        int nBits, uint8_t op,
+                                        uint8_t idx)
+{
+    assert(idx < Size);
+
+    VecWidthCode mask(Size, nBits);
+
+    // FIXME: this count as an invalid access to the register, in terms of
+    // stats?? Create proxy access function?
+    const VecRegT<Elem, Size, true> &vsrc =
+        inst->readVecRegOperand(inst->staticInst.get(), op);
+
+    int rsl = roundedPrcFunc((uint64_t) (int64_t) vsrc[idx]);
+
+    assert(rsl <= nBits);
+
+    DPRINTF(WidthDecoderWidth, "    Vec Lane %i: val=%d, rsl=%d\n",
+            idx, (int) vsrc[idx], rsl);
+
+    mask.set(idx, rsl);
+
+    return mask;
+}
+
+template <class Impl>
+template <int Size, typename Elem>
+VecWidthCode
+WidthDecoder<Impl>::getWidthVecRegBroadcast(const DynInstPtr &inst,
+                                            int nElem, int nBits,
+                                            uint8_t op, uint8_t idx)
+{
+    assert(nElem <= Size);
+    assert(idx < Size);
+
+    VecWidthCode mask(Size, nBits);
+
+    // FIXME: this count as an invalid access to the register, in terms of
+    // stats?? Create proxy access function?
+    const VecRegT<Elem, Size, true> &vsrc =
+        inst->readVecRegOperand(inst->staticInst.get(), op);
+
+    int rsl = roundedPrcFunc((uint64_t) (int64_t) vsrc[idx]);
+
+    assert(rsl <= nBits);
+
+    for (size_t i = 0; i < nElem; i++)
+    {
+        DPRINTF(WidthDecoderWidth, "    Vec Lane %i: val=%d, rsl=%d\n",
+                i, (int) vsrc[idx], rsl);
+
+        mask.set(i, rsl);
+    }
+
+    return mask;
+}
+
+template <class Impl>
+template <int Size, typename Elem>
+VecWidthCode
 WidthDecoder<Impl>::getWidthVecRegWiden(const DynInstPtr &inst, int nElem,
                                         int nBits, uint8_t op, bool low)
 {
@@ -348,10 +483,10 @@ WidthDecoder<Impl>::getWidthVecRegWiden(const DynInstPtr &inst, int nElem,
     {
         int rsl = roundedPrcFunc((uint64_t) (int64_t) vsrc[bias + i]);
 
+        assert(rsl <= nBits);
+
         DPRINTF(WidthDecoderWidth, "    Vec Lane %i: val=%d, rsl=%d\n",
                 i, (int) vsrc[i], rsl);
-
-        assert(rsl <= nBits);
 
         mask.set(i, rsl);
     }
@@ -512,7 +647,7 @@ WidthDecoder<Impl>::decode(const DynInstPtr &inst)
                                         " inst decoded: %s.\n",
                                         inst->staticInst->disassemble(
                                             inst->instAddr()));
-                                return(WidthInfo(WidthClass::SimdNoInfo));
+                                return decodeNeonCopy(inst);
                             }
                         } else if (bits(machInst, 29) == 1) {
                             // Neon Ext.
@@ -1674,6 +1809,96 @@ WidthDecoder<Impl>::decodeNeonShiftByImm(const DynInstPtr &inst)
 
 template <class Impl>
 WidthInfo
+WidthDecoder<Impl>::decodeNeonCopy(const DynInstPtr &inst)
+{
+    using namespace ArmISAInst;
+
+    ArmISA::ExtMachInst machInst = inst->staticInst->machInst;
+
+    uint8_t q = bits(machInst, 30);
+    uint8_t op = bits(machInst, 29);
+    uint8_t imm5 = bits(machInst, 20, 16);
+    uint8_t imm4 = bits(machInst, 14, 11);
+
+    uint8_t imm5_pos = findLsbSet(imm5);
+    uint8_t index = 0;
+    uint8_t size = 0;
+
+    if (op) {
+        if (!q || (imm4 & mask(imm5_pos)))
+            return(WidthInfo(WidthClass::SimdNoInfo));
+
+        index = bits(imm4, 3, imm5_pos);
+        size = imm5_pos;
+        if (size > 3) {
+            return(WidthInfo(WidthClass::SimdNoInfo));
+        }
+
+        DPRINTF(WidthDecoderDecode,
+                "Neon INS inst decoded: %s. Size: %d.\n",
+                inst->staticInst->disassemble(inst->instAddr()),
+                size);
+        return(WidthInfo(WidthClass::SimdPackingAlu,
+                        widthOp1VectorIndex(inst, size, 2, index),
+                        size));
+    }
+
+    switch (imm4) {
+        case 0x0:
+            index = bits(imm5, 4, imm5_pos + 1);
+            size = imm5_pos;
+            if (size > 3) {
+                return(WidthInfo(WidthClass::SimdNoInfo));
+            }
+
+            DPRINTF(WidthDecoderDecode,
+                    "Neon DUP inst decoded: %s. Size: %d.\n",
+                    inst->staticInst->disassemble(inst->instAddr()),
+                    size);
+            return(WidthInfo(WidthClass::SimdPackingAlu,
+                             widthOp1VectorBroadcast(inst, q, size, 2, index),
+                             size));
+            break;
+        case 0x5:
+            index = bits(imm5, 4, imm5_pos + 1);
+            size = imm5_pos;
+            if (size > 2) {
+                return(WidthInfo(WidthClass::SimdNoInfo));
+            }
+
+            DPRINTF(WidthDecoderDecode,
+                    "Neon SMOV inst decoded: %s. Size: %d.\n",
+                    inst->staticInst->disassemble(inst->instAddr()),
+                    size);
+            return(WidthInfo(WidthClass::SimdPackingAlu,
+                            widthOp1VectorIndex(inst, size, 2, index),
+                            size));
+            break;
+        case 0x7:
+            index = imm5 >> (imm5_pos + 1);
+            size = imm5_pos;
+            if (size > 3) {
+                return(WidthInfo(WidthClass::SimdNoInfo));
+            }
+
+            if ((q && imm5_pos != 3) || (!q && imm5_pos >= 3))
+                return(WidthInfo(WidthClass::SimdNoInfo));
+
+            DPRINTF(WidthDecoderDecode,
+                    "Neon UMOV inst decoded: %s. Size: %d.\n",
+                    inst->staticInst->disassemble(inst->instAddr()),
+                    size);
+            return(WidthInfo(WidthClass::SimdPackingAlu,
+                            widthOp1VectorIndex(inst, size, 2, index),
+                            size));
+            break;
+    }
+
+    return(WidthInfo(WidthClass::SimdNoInfo));
+}
+
+template <class Impl>
+WidthInfo
 WidthDecoder<Impl>::decodeNeonExt(const DynInstPtr &inst)
 {
     using namespace ArmISAInst;
@@ -1879,6 +2104,44 @@ WidthDecoder<Impl>::widthOp1VectorAcross(const DynInstPtr &inst,
             maskOp1.to_string(),
             size);
     return maskRes;
+}
+
+template <class Impl>
+VecWidthCode
+WidthDecoder<Impl>::widthOp1VectorIndex(const DynInstPtr &inst,
+                                        uint8_t size,
+                                        uint8_t op1, uint8_t idx)
+{
+    VecWidthCode maskOp1;
+
+    maskOp1 = vecSrcRegWidthMaskIndex(inst, size, op1, idx);
+    sampleVecOp(maskOp1, size);
+
+    sampleVecInst(maskOp1, size);
+    DPRINTF(WidthDecoderWidth, "Instruction with 1 vector operand (index)"
+            " has width mask %s (eSize=%i).\n",
+            maskOp1.to_string(),
+            size);
+    return maskOp1;
+}
+
+template <class Impl>
+VecWidthCode
+WidthDecoder<Impl>::widthOp1VectorBroadcast(const DynInstPtr &inst,
+                                            uint8_t q, uint8_t size,
+                                            uint8_t op1, uint8_t idx)
+{
+    VecWidthCode maskOp1;
+
+    maskOp1 = vecSrcRegWidthMaskBroadcast(inst, q, size, op1, idx);
+    sampleVecOp(maskOp1, size);
+
+    sampleVecInst(maskOp1, size);
+    DPRINTF(WidthDecoderWidth, "Instruction with 1 vector operand"
+            "(broadcast) has width mask %s (eSize=%i).\n",
+            maskOp1.to_string(),
+            size);
+    return maskOp1;
 }
 
 template <class Impl>
