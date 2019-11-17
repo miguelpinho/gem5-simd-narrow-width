@@ -393,8 +393,8 @@ WidthDecoder<Impl>::getWidthVecReg(const DynInstPtr &inst, int nElem,
     {
         int rsl = roundedPrcFunc((uint64_t) (int64_t) vsrc[i]);
 
-        DPRINTF(WidthDecoderWidth, "    Vec Lane %i: val=%d, rsl=%d\n",
-                i, (int) vsrc[i], rsl);
+        DPRINTF(WidthDecoderWidth, "    Vec Lane %i: val=%llx, rsl=%d\n",
+                i, (int64_t) vsrc[i], rsl);
 
         assert(rsl <= nBits);
 
@@ -424,8 +424,8 @@ WidthDecoder<Impl>::getWidthVecRegIndex(const DynInstPtr &inst,
 
     assert(rsl <= nBits);
 
-    DPRINTF(WidthDecoderWidth, "    Vec Lane %i: val=%d, rsl=%d\n",
-            idx, (int) vsrc[idx], rsl);
+    DPRINTF(WidthDecoderWidth, "    Vec Lane %i: val=%llx, rsl=%d\n",
+            idx, (int64_t) vsrc[idx], rsl);
 
     mask.set(idx, rsl);
 
@@ -455,8 +455,8 @@ WidthDecoder<Impl>::getWidthVecRegBroadcast(const DynInstPtr &inst,
 
     for (size_t i = 0; i < nElem; i++)
     {
-        DPRINTF(WidthDecoderWidth, "    Vec Lane %i: val=%d, rsl=%d\n",
-                i, (int) vsrc[idx], rsl);
+        DPRINTF(WidthDecoderWidth, "    Vec Lane %i: val=%llx, rsl=%d\n",
+                i, (int64_t) vsrc[idx], rsl);
 
         mask.set(i, rsl);
     }
