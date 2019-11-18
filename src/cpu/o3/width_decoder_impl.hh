@@ -234,6 +234,20 @@ WidthDecoder<Impl>::regStats()
  * @todo Change to use resol granularity.
  */
 template <class Impl>
+int
+WidthDecoder<Impl>::intSrcRegWidth(const DynInstPtr &inst,
+                                   uint8_t op)
+{
+    uint64_t val = inst->readIntRegOperand(inst->staticInst.get(),
+                                           op);
+
+    return roundedPrcFunc(val);
+}
+
+/**
+ * @todo Change to use resol granularity.
+ */
+template <class Impl>
 VecWidthCode
 WidthDecoder<Impl>::vecSrcRegWidthMask(const DynInstPtr &inst,
                                        uint8_t q, uint8_t size,
@@ -1912,11 +1926,37 @@ WidthDecoder<Impl>::decodeNeonCopy(const DynInstPtr &inst)
             }
 
             DPRINTF(WidthDecoderDecode,
-                    "Neon DUP inst decoded: %s. Size: %d.\n",
+                    "Neon DUP inst decoded: %s. Size: %d. Q: %d.\n",
                     inst->staticInst->disassemble(inst->instAddr()),
-                    size);
+                    size, q);
             return(WidthInfo(WidthClass::SimdPackingAlu,
                              widthOp1VectorBroadcast(inst, q, size, 2, index),
+                             size));
+            break;
+        case 0x1:
+            switch (imm5) {
+              case 0x1:
+                size = 0x0;
+                break;
+              case 0x2:
+                size = 0x1;
+                break;
+              case 0x4:
+                size = 0x2;
+                break;
+              case 0x8:
+                size = 0x3;
+                break;
+              default:
+                return(WidthInfo(WidthClass::SimdNoInfo));
+            }
+
+            DPRINTF(WidthDecoderDecode,
+                    "Neon DUP (gpr) inst decoded: %s. Size: %d. Q: %d.\n",
+                    inst->staticInst->disassemble(inst->instAddr()),
+                    size, q);
+            return(WidthInfo(WidthClass::SimdPackingAlu,
+                             widthOp1GprBroadcast(inst, q, size, 2),
                              size));
             break;
         case 0x5:
@@ -2198,6 +2238,31 @@ WidthDecoder<Impl>::widthOp1VectorBroadcast(const DynInstPtr &inst,
 
     sampleVecInst(maskOp1, size);
     DPRINTF(WidthDecoderWidth, "Instruction with 1 vector operand"
+            "(broadcast) has width mask %s (eSize=%i).\n",
+            maskOp1.to_string(),
+            size);
+    return maskOp1;
+}
+
+template <class Impl>
+VecWidthCode
+WidthDecoder<Impl>::widthOp1GprBroadcast(const DynInstPtr &inst,
+                                         uint8_t q, uint8_t size,
+                                         uint8_t op1)
+{
+    VecWidthCode maskOp1;
+
+    int rsl = intSrcRegWidth(inst, op1);
+    int eBits = 8 << size;
+    if (rsl > eBits) {
+        rsl = eBits;
+    }
+    int nElem = (64 << q) >> (size + 3);
+    maskOp1 = VecWidthCode(nElem, eBits, rsl);
+    sampleVecOp(maskOp1, size);
+
+    sampleVecInst(maskOp1, size);
+    DPRINTF(WidthDecoderWidth, "Instruction with 1 integer operand"
             "(broadcast) has width mask %s (eSize=%i).\n",
             maskOp1.to_string(),
             size);
