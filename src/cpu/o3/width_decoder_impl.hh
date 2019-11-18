@@ -240,8 +240,12 @@ WidthDecoder<Impl>::intSrcRegWidth(const DynInstPtr &inst,
 {
     uint64_t val = inst->readIntRegOperand(inst->staticInst.get(),
                                            op);
+    int rsl = roundedPrcFunc(val);
 
-    return roundedPrcFunc(val);
+    DPRINTF(WidthDecoderWidth, "    Gpr reg: val=%llx, rsl=%d\n",
+            val, rsl);
+
+    return rsl;
 }
 
 /**
@@ -2424,8 +2428,13 @@ WidthDecoder<Impl>::widthOp1GprBroadcast(const DynInstPtr &inst,
     if (rsl > eBits) {
         rsl = eBits;
     }
+
     int nElem = (64 << q) >> (size + 3);
-    maskOp1 = VecWidthCode(nElem, eBits, rsl);
+    int tElem = 128 >> (size + 3);
+    maskOp1 = VecWidthCode(tElem, eBits, rsl);
+    for (int i = 0; i < nElem; i++) {
+        maskOp1.set(i, rsl);
+    }
     sampleVecOp(maskOp1, size);
 
     sampleVecInst(maskOp1, size);
@@ -2445,12 +2454,19 @@ WidthDecoder<Impl>::widthOp1ImmBroadcast(const DynInstPtr &inst,
     VecWidthCode maskOp1;
 
     int rsl = roundedPrcFunc(val);
+    DPRINTF(WidthDecoderWidth, "    Imm: val=%llx, rsl=%d\n",
+            val, rsl);
     int eBits = 8 << size;
     if (rsl > eBits) {
         rsl = eBits;
     }
+
     int nElem = (64 << q) >> (size + 3);
-    maskOp1 = VecWidthCode(nElem, eBits, rsl);
+    int tElem = 128 >> (size + 3);
+    maskOp1 = VecWidthCode(tElem, eBits, 0);
+    for (int i = 0; i < nElem; i++) {
+        maskOp1.set(i, rsl);
+    }
     sampleVecOp(maskOp1, size);
 
     sampleVecInst(maskOp1, size);
