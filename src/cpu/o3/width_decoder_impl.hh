@@ -612,7 +612,7 @@ WidthDecoder<Impl>::decode(const DynInstPtr &inst)
                                             " inst decoded: %s.\n",
                                             inst->staticInst->disassemble(
                                                 inst->instAddr()));
-                                    return(WidthInfo(WidthClass::SimdNoInfo));
+                                    return decodeNeonModImm(inst);
                                 }
                             }
                         } else if (bits(machInst, 21) == 1) {
@@ -1883,6 +1883,173 @@ WidthDecoder<Impl>::decodeNeonShiftByImm(const DynInstPtr &inst)
 
 template <class Impl>
 WidthInfo
+WidthDecoder<Impl>::decodeNeonModImm(const DynInstPtr &inst)
+{
+    using namespace ArmISAInst;
+
+    ArmISA::ExtMachInst machInst = inst->staticInst->machInst;
+
+    uint8_t q = bits(machInst, 30);
+    uint8_t op = bits(machInst, 29);
+    uint8_t abcdefgh = (bits(machInst, 18, 16) << 5) |
+                        bits(machInst, 9, 5);
+    uint8_t cmode = bits(machInst, 15, 12);
+    uint8_t o2 = bits(machInst, 11);
+
+    if (o2 == 0x1 || (op == 0x1 && cmode == 0xf && !q))
+        return(WidthInfo(WidthClass::SimdNoInfo));
+
+    bool immValid = true;
+    const uint64_t bigImm = simd_modified_imm(op, cmode, abcdefgh,
+                                                immValid,
+                                                true /* isAarch64 */);
+    if (!immValid) {
+        return(WidthInfo(WidthClass::SimdNoInfo));
+    }
+
+    if (op) {
+        if (bits(cmode, 3) == 0) {
+            if (bits(cmode, 0) == 0) {
+                // MvniDX, MvniQX
+                DPRINTF(WidthDecoderDecode,
+                        "Neon MVNI inst decoded: %s. Size: %d, Q: %d.\n",
+                        inst->staticInst->disassemble(inst->instAddr()),
+                        0x3, q);
+                return(WidthInfo(WidthClass::SimdPackingAlu,
+                                 widthOp1ImmBroadcast(inst, q, 0x3, bigImm),
+                                                      0x3));
+            } else {
+                // BicImmDX, BicImmQX
+                DPRINTF(WidthDecoderDecode,
+                        "Neon BIC inst decoded: %s. Size: %d, Q: %d.\n",
+                        inst->staticInst->disassemble(inst->instAddr()),
+                        0x3, q);
+                return(WidthInfo(WidthClass::SimdPackingAlu,
+                                 widthOp1ImmBroadcast(inst, q, 0x3, bigImm),
+                                                      0x3));
+            }
+        } else {
+            if (bits(cmode, 2) == 1) {
+                switch (bits(cmode, 1, 0)) {
+                    case 0:
+                    case 1:
+                        // MvniDX, MvniQX
+                        DPRINTF(WidthDecoderDecode,
+                            "Neon MVNI inst decoded: %s. Size: %d, Q: %d.\n",
+                            inst->staticInst->disassemble(inst->instAddr()),
+                            0x3, q);
+                        return(WidthInfo(WidthClass::SimdPackingAlu,
+                                   widthOp1ImmBroadcast(inst, q, 0x3, bigImm),
+                                                        0x3));
+                        break;
+                    case 2:
+                        // MoviDX, MoviQX
+                        DPRINTF(WidthDecoderDecode,
+                            "Neon MOVI inst decoded: %s. Size: %d, Q: %d.\n",
+                            inst->staticInst->disassemble(inst->instAddr()),
+                            0x3, q);
+                        return(WidthInfo(WidthClass::SimdPackingAlu,
+                                   widthOp1ImmBroadcast(inst, q, 0x3, bigImm),
+                                                        0x3));
+                        break;
+                    case 3:
+                        if (!q) {
+                            // MoviDX
+                            DPRINTF(WidthDecoderDecode,
+                              "Neon MOVI inst decoded: %s. Size: %d, Q: %d.\n",
+                              inst->staticInst->disassemble(inst->instAddr()),
+                              0x3, q);
+                            return(WidthInfo(WidthClass::SimdPackingAlu,
+                                    widthOp1ImmBroadcast(inst, q, 0x3, bigImm),
+                                                         0x3));
+                        }
+                        break;
+                }
+            } else {
+                if (bits(cmode, 0) == 0) {
+                    // MvniDX, MvniQX
+                    DPRINTF(WidthDecoderDecode,
+                            "Neon MVNI inst decoded: %s. Size: %d, Q: %d.\n",
+                            inst->staticInst->disassemble(inst->instAddr()),
+                            0x3, q);
+                    return(WidthInfo(WidthClass::SimdPackingAlu,
+                             widthOp1ImmBroadcast(inst, q, 0x3, bigImm),
+                                                  0x3));
+                } else {
+                    // BicImmDX, BicImmQX
+                    DPRINTF(WidthDecoderDecode,
+                            "Neon BIC inst decoded: %s. Size: %d, Q: %d.\n",
+                            inst->staticInst->disassemble(inst->instAddr()),
+                            0x3, q);
+                    return(WidthInfo(WidthClass::SimdPackingAlu,
+                             widthOp1ImmBroadcast(inst, q, 0x3, bigImm),
+                                                  0x3));
+                }
+            }
+        }
+    } else {
+        if (bits(cmode, 3) == 0) {
+            if (bits(cmode, 0) == 0) {
+                // MoviDX, MoviQX
+                DPRINTF(WidthDecoderDecode,
+                        "Neon MOVI inst decoded: %s. Size: %d, Q: %d.\n",
+                        inst->staticInst->disassemble(inst->instAddr()),
+                        0x3, q);
+                return(WidthInfo(WidthClass::SimdPackingAlu,
+                                    widthOp1ImmBroadcast(inst, q, 0x3, bigImm),
+                                                         0x3));
+            } else {
+                // OrrImmDX, OrrImmQX
+                DPRINTF(WidthDecoderDecode,
+                        "Neon ORR inst decoded: %s. Size: %d, Q: %d.\n",
+                        inst->staticInst->disassemble(inst->instAddr()),
+                        0x3, q);
+                return(WidthInfo(WidthClass::SimdPackingAlu,
+                                widthOp1ImmBroadcast(inst, q, 0x3, bigImm),
+                                                     0x3));
+            }
+        } else {
+            if (bits(cmode, 2) == 1) {
+                if (bits(cmode, 1, 0) != 0x3) {
+                    // MoviDX, MoviQX
+                    DPRINTF(WidthDecoderDecode,
+                            "Neon MOVI inst decoded: %s. Size: %d, Q: %d.\n",
+                            inst->staticInst->disassemble(inst->instAddr()),
+                            0x3, q);
+                    return(WidthInfo(WidthClass::SimdPackingAlu,
+                             widthOp1ImmBroadcast(inst, q, 0x3, bigImm),
+                                                  0x3));
+                }
+            } else {
+                if (bits(cmode, 0) == 0) {
+                    // MoviDX, MoviQX
+                    DPRINTF(WidthDecoderDecode,
+                            "Neon MOVI inst decoded: %s. Size: %d, Q: %d.\n",
+                            inst->staticInst->disassemble(inst->instAddr()),
+                            0x3, q);
+                    return(WidthInfo(WidthClass::SimdPackingAlu,
+                             widthOp1ImmBroadcast(inst, q, 0x3, bigImm),
+                                                  0x3));
+                } else {
+                    // OrrImmDX, OrrImmQX
+                    DPRINTF(WidthDecoderDecode,
+                            "Neon ORR inst decoded: %s. Size: %d, Q: %d.\n",
+                            inst->staticInst->disassemble(inst->instAddr()),
+                            0x3, q);
+                    return(WidthInfo(WidthClass::SimdPackingAlu,
+                                    widthOp1ImmBroadcast(inst, q, 0x3, bigImm),
+                                                         0x3));
+                }
+            }
+        }
+    }
+
+
+    return(WidthInfo(WidthClass::SimdNoInfo));
+}
+
+template <class Impl>
+WidthInfo
 WidthDecoder<Impl>::decodeNeonCopy(const DynInstPtr &inst)
 {
     using namespace ArmISAInst;
@@ -2268,6 +2435,32 @@ WidthDecoder<Impl>::widthOp1GprBroadcast(const DynInstPtr &inst,
             size);
     return maskOp1;
 }
+
+template <class Impl>
+VecWidthCode
+WidthDecoder<Impl>::widthOp1ImmBroadcast(const DynInstPtr &inst,
+                                         uint8_t q, uint8_t size,
+                                         uint64_t val)
+{
+    VecWidthCode maskOp1;
+
+    int rsl = roundedPrcFunc(val);
+    int eBits = 8 << size;
+    if (rsl > eBits) {
+        rsl = eBits;
+    }
+    int nElem = (64 << q) >> (size + 3);
+    maskOp1 = VecWidthCode(nElem, eBits, rsl);
+    sampleVecOp(maskOp1, size);
+
+    sampleVecInst(maskOp1, size);
+    DPRINTF(WidthDecoderWidth, "Instruction with 1 imm operand"
+            "(broadcast) has width mask %s (eSize=%i).\n",
+            maskOp1.to_string(),
+            size);
+    return maskOp1;
+}
+
 
 template <class Impl>
 VecWidthCode
