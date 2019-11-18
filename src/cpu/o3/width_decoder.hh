@@ -82,6 +82,10 @@ class WidthDecoder
     /** Return width mask of a vector instruction. */
     VecWidthCode vecInstWidthMask(const DynInstPtr &inst);
 
+    /** Return width of one of the integer source registers. */
+    int
+    intSrcRegWidth(const DynInstPtr &inst, uint8_t op);
+
     /** Return width maks of one of the vector source registers. */
     VecWidthCode
     vecSrcRegWidthMask(const DynInstPtr &inst, uint8_t q, uint8_t size,
@@ -156,6 +160,9 @@ class WidthDecoder
     VecWidthCode widthOpAcrossVector(const DynInstPtr &inst,
                                      uint8_t q, uint8_t size,
                                      uint8_t op);
+    VecWidthCode widthOp1GprBroadcast(const DynInstPtr &inst,
+                                      uint8_t q, uint8_t size,
+                                      uint8_t op1);
 
   protected:
     std::string _name;
