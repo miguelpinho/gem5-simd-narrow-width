@@ -163,6 +163,9 @@ class WidthDecoder
     VecWidthCode widthOp1GprBroadcast(const DynInstPtr &inst,
                                       uint8_t q, uint8_t size,
                                       uint8_t op1);
+    VecWidthCode widthOp1ImmBroadcast(const DynInstPtr &inst,
+                                      uint8_t q, uint8_t size,
+                                      uint64_t val);
 
   protected:
     std::string _name;
@@ -227,6 +230,8 @@ class WidthDecoder
     WidthInfo decodeNeonAcrossLanes(const DynInstPtr &inst);
     /** Decode Neon ShiftByImm instruction width. */
     WidthInfo decodeNeonShiftByImm(const DynInstPtr &inst);
+    /** Decode Neon ModImm instruction width. */
+    WidthInfo decodeNeonModImm(const DynInstPtr &inst);
     /** Decode Neon Copy instruction width. */
     WidthInfo decodeNeonCopy(const DynInstPtr &inst);
     /** Decode Neon Ext instruction width. */
