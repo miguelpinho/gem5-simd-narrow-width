@@ -247,4 +247,21 @@ BaseO3DynInst<Impl>::syscall(int64_t callnum, Fault *fault)
     }
 }
 
+/// MPINHO 23-aug-2019 BEGIN ///
+template <class Impl>
+int
+BaseO3DynInst<Impl>::getWidthVal()
+{
+    if (this->isVector()) {
+        if (this->width.hasWidthInfo()) {
+            return this->width.getWidthVal();
+        } else {
+            return VecSizeBits;
+        }
+    }
+
+    return ScalarSizeBits;
+}
+/// MPINHO 23-aug-2019 END ///
+
 #endif//__CPU_O3_DYN_INST_IMPL_HH__

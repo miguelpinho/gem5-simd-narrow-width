@@ -1,6 +1,7 @@
 /// MPINHO 23-jul-2019 BEGIN ///
 
 #include "cpu/o3/width_info.hh"
+#include "cpu/func_unit_width.hh"
 
 WidthInfo::WidthInfo()
     : width_class(WidthClass::NoInfo),
@@ -38,6 +39,16 @@ WidthInfo::WidthInfo(WidthClass _width_class,
             panic("Invalid vector elem size: %d.", _size);
             break;
     }
+}
+
+bool
+WidthInfo::hasWidthInfo()
+{
+    if (width_class == WidthClass::SimdNoPacking) return true;
+    if (width_class == WidthClass::SimdPackingAlu) return true;
+    if (width_class == WidthClass::SimdPackingMult) return true;
+
+    return false;
 }
 
 bool
@@ -82,9 +93,14 @@ WidthInfo::to_string()
 
     ss << WidthClassStrings[static_cast<int>(width_class)];
 
-    if (width_class != WidthClass::NoInfo) {
-        ss << "::";
-        ss << width_mask.to_string();
+    if (width_class != WidthClass::NoInfo &&
+        width_class != WidthClass::SimdNoInfo) {
+        ss << " (elem: "
+           << VecElemSizeStrings[static_cast<int>(elem_size)]
+           << ", total: "
+           << width_mask.totalWidth()
+           << ", mask: "
+           << width_mask.to_string();
     }
 
     return ss.str();

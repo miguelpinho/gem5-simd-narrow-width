@@ -68,7 +68,8 @@ class WidthPackingPolicy(ScopedEnum):
 
 ### MPINHO 26-jul-2019 BEGIN ###
 class WidthClass(ScopedEnum):
-    vals = [ 'NoInfo', 'SimdNoPacking', 'SimdPackingAlu', 'SimdPackingMult' ]
+    vals = [ 'NoInfo', 'SimdNoInfo', 'SimdNoPacking', 'SimdPackingAlu',
+             'SimdPackingMult' ]
 ### MPINHO 26-jul-2019 END ###
 
 ### MPINHO 30-jul-2019 BEGIN ###

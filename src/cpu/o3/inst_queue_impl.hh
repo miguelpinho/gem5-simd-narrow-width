@@ -53,6 +53,8 @@
 #include "cpu/o3/inst_queue.hh"
 #include "debug/IQ.hh"
 #include "debug/IQFuse.hh" /// MPINHO 13-aug-2019 ///
+#include "debug/IssueWidth.hh" /// MPINHO 26-aug-2019 ///
+#include "debug/Width.hh" /// MPINHO 21-aug-2019 ///
 #include "enums/OpClass.hh"
 #include "enums/VecElemSize.hh" /// MPINHO 30-jul-2019 ///
 #include "enums/WidthClass.hh" /// MPINHO 29-jul-2019 ///
@@ -446,11 +448,6 @@ InstructionQueue<Impl>::regStats()
         statFuseSuccessNorm.subname(i, WidthClassStrings[i]);
         statFuseSuccessNormTotal.subname(i, WidthClassStrings[i]);
     }
-
-    cyclesVecActive
-        .name(name() + ".cyclesVecActive")
-        .desc("Cycles with activity in the vector ALU")
-        ;
     /// MPINHO 30-jul-2019 END ///
 
     for (ThreadID tid = 0; tid < numThreads; tid++) {
@@ -923,6 +920,10 @@ InstructionQueue<Impl>::scheduleReadyInsts()
         addReadyMemInst(mem_inst);
     }
 
+    /// MPINHO 23-aug-2019 BEGIN ///
+    fuPool->resetFUCaps();
+    /// MPINHO 23-aug-2019 END ///
+
     // Have iterator to head of the list
     // While I haven't exceeded bandwidth or reached the end of the list,
     // Try to get a FU that can do what this op needs.
@@ -1019,6 +1020,26 @@ InstructionQueue<Impl>::scheduleReadyInsts()
                 }
             }
 
+            /// MPINHO 23-aug-2019 BEGIN ///
+            // Register issued inst and its width.
+            if (op_class != No_OpClass) {
+                DPRINTF(IssueWidth, "Will issue instruction \"%s\""
+                        " of class %s and with width %d to a FU (%d)"
+                        " with available issueCap %d and widthCap %d.\n",
+                        issuing_inst->staticInst->disassemble(
+                            issuing_inst->instAddr()),
+                        WidthClassStrings[
+                            (int) issuing_inst->getWidthClass()],
+                        issuing_inst->getWidthVal(),
+                        idx,
+                        fuPool->getFUIssueCap(idx),
+                        fuPool->getFUWidthCap(idx));
+
+                fuPool->useFUIssueCap(idx);
+                fuPool->useFUWidthCap(idx, issuing_inst->getWidthVal());
+            }
+            /// MPINHO 23-aug-2019 END ///
+
             DPRINTF(IQ, "Thread %i: Issuing instruction PC %s "
                     "[sn:%lli]\n",
                     tid, issuing_inst->pcState(),
@@ -1059,201 +1080,214 @@ InstructionQueue<Impl>::scheduleReadyInsts()
                 statIssuedVecElemSize[static_cast<int>(width_class)]++;
             /// MPINHO 30-jul-2019 BEGIN ///
 
-
             /// MPINHO 12-aug-2019 BEGIN ///
             // Fuse algorithm:
             // If a fuseable instruction has been successufully issued, loops
             // through the next ready instructions in search of compatible fuse
             // candidates.
             if (widthDecoder.isFuseType(issuing_inst)) {
-                unsigned fuseCap = fuPool->getFUFuseCap(idx);
-
-                // Fuseable inst found: trace, stat, fuseCap.
+                // First fuseable inst found: trace, stat.
                 DPRINTF(IQFuse,
                         "Found instruction \"%s\" suitable for fuse,"
                         " of WidthClass: %s."
-                        " This FU fuse capacity is: %u (FU idx: %d).\n",
+                        " This FU issue capacity is: %u (FU idx: %d).\n",
                         issuing_inst->staticInst->
                             disassemble(issuing_inst->instAddr()),
                         WidthClassStrings[
                             static_cast<int>(width_class)],
-                        fuseCap,
+                        fuPool->getFUIssueCap(idx),
                         idx);
 
-                if (fuseCap > 0 && total_issued < totalWidth) {
-                    // Loop through the first ready instructions.
-                    ListOrderIt fuse_order_it = order_it;
-                    while (fuse_order_it != order_end_it) {
-                        OpClass fuse_op_class = (*fuse_order_it).queueType;
+                // Try to issue extra instructions, of a compatible fuse type.
+                ListOrderIt fuse_order_it = order_it;
+                while (total_issued < totalWidth &&
+                      fuse_order_it != order_end_it &&
+                      fuPool->getFUIssueCap(idx) > 0 &&
+                      fuPool->getFUWidthCap(idx) > 0) {
 
-                        assert(!readyInsts[fuse_op_class].empty());
-                        DynInstPtr fuse_candidate_inst =
-                            readyInsts[fuse_op_class].top();
+                    OpClass fuse_op_class = (*fuse_order_it).queueType;
 
-                        if (fuse_candidate_inst->isSquashed()) {
-                            // Leave this instruction to be squashed later.
-                            DPRINTF(IQFuse,
-                                    "\tIgnored squashed instruction \"%s\".\n",
-                                    fuse_candidate_inst->staticInst->
-                                        disassemble(issuing_inst->instAddr()));
-                            ++fuse_order_it;
-                            continue;
-                        }
-                        if (!fuPool->hasCapability(idx, fuse_op_class)) {
-                            DPRINTF(IQFuse,
-                                    "\tIgnored inst \"%s\" with invalid"
-                                    " capability %s for this FU.\n" ,
-                                    fuse_candidate_inst->staticInst->
-                                        disassemble(issuing_inst->instAddr()),
-                                    Enums::OpClassStrings[
-                                        static_cast<int>(fuse_op_class)]);
-                            ++fuse_order_it;
-                            continue;
-                        }
-                        if (!fuPool->isPipelined(fuse_op_class)) {
-                            DPRINTF(IQFuse,
-                                    "\tIgnored inst \"%s\" which is not"
-                                    " pipelined.",
-                                    fuse_candidate_inst->staticInst->
-                                        disassemble(
-                                            issuing_inst->instAddr()));
-                            ++fuse_order_it;
-                            continue;
-                        }
-                        if (fuse_candidate_inst->isMemRef()) {
-                            DPRINTF(IQFuse,
-                                    "\tIgnored memory ref inst \"%s\".",
-                                    fuse_candidate_inst->staticInst->
-                                        disassemble(
-                                            issuing_inst->instAddr()));
-                            ++fuse_order_it;
-                            continue;
-                        }
+                    assert(!readyInsts[fuse_op_class].empty());
+                    DynInstPtr fuse_candidate_inst =
+                        readyInsts[fuse_op_class].top();
 
-                        if (widthDecoder.matchFuseType(issuing_inst,
-                                                       fuse_candidate_inst))
-                        {
-                            WidthClass fuse_width_class
-                                = issuing_inst->getWidthClass();
+                    if (fuse_candidate_inst->isSquashed()) {
+                        // Leave this instruction to be squashed later.
+                        DPRINTF(IQFuse,
+                                "\tIgnored squashed instruction \"%s\".\n",
+                                fuse_candidate_inst->staticInst->
+                                    disassemble(issuing_inst->instAddr()));
+                        ++fuse_order_it;
+                        continue;
+                    }
+                    if (!fuPool->hasCapability(idx, fuse_op_class)) {
+                        DPRINTF(IQFuse,
+                                "\tIgnored inst \"%s\" with invalid"
+                                " capability %s for this FU.\n" ,
+                                fuse_candidate_inst->staticInst->
+                                    disassemble(issuing_inst->instAddr()),
+                                Enums::OpClassStrings[
+                                    static_cast<int>(fuse_op_class)]);
+                        ++fuse_order_it;
+                        continue;
+                    }
+                    if (!fuPool->isPipelined(fuse_op_class)) {
+                        DPRINTF(IQFuse,
+                                "\tIgnored inst \"%s\" which is not"
+                                " pipelined.",
+                                fuse_candidate_inst->staticInst->
+                                    disassemble(
+                                        issuing_inst->instAddr()));
+                        ++fuse_order_it;
+                        continue;
+                    }
+                    if (fuse_candidate_inst->isMemRef()) {
+                        DPRINTF(IQFuse,
+                                "\tIgnored memory ref inst \"%s\".",
+                                fuse_candidate_inst->staticInst->
+                                    disassemble(
+                                        issuing_inst->instAddr()));
+                        ++fuse_order_it;
+                        continue;
+                    }
 
-                            // Fuse opportunity found.
-                            statFuseChances[
+                    if (widthDecoder.matchFuseType(issuing_inst,
+                                                   fuse_candidate_inst)) {
+                        WidthClass fuse_width_class
+                            = fuse_candidate_inst->getWidthClass();
+
+                        // Fuse opportunity found.
+                        statFuseChances[
+                            static_cast<int>(fuse_width_class)]++;
+
+                        if (fuse_candidate_inst->getWidthVal() <=
+                            fuPool->getFUWidthCap(idx)) {
+                            // Fuse success.
+                            statFuseSuccess[
                                 static_cast<int>(fuse_width_class)]++;
+                            DPRINTF(IQFuse,
+                                    "\tWill issued fused inst \"%s\","
+                                    " with WidthClass: %S,\n",
+                                    fuse_candidate_inst->staticInst->
+                                        disassemble(
+                                            issuing_inst->instAddr()),
+                                    WidthClassStrings[
+                                        static_cast<int>(
+                                            fuse_width_class)]);
 
-                            if (widthDecoder.canFuseInst(issuing_inst,
-                                                         fuse_candidate_inst))
-                            {
-                                // Fuse success.
-                                statFuseSuccess[
-                                    static_cast<int>(fuse_width_class)]++;
-                                DPRINTF(IQFuse,
-                                        "\tWill issued fused inst \"%s\","
-                                        " with WidthClass: %S,\n",
-                                        fuse_candidate_inst->staticInst->
-                                            disassemble(
-                                                issuing_inst->instAddr()),
-                                        WidthClassStrings[
-                                            static_cast<int>(
-                                                fuse_width_class)]);
+                            // Execute inst.
+                            Cycles fuse_op_latency =
+                                fuPool->getOpLatency(fuse_op_class);
 
-                                // Execute inst.
-                                Cycles fuse_op_latency =
-                                    fuPool->getOpLatency(fuse_op_class);
+                            // Schedule inst.
+                            if (fuse_op_latency == Cycles(1)) {
+                                i2e_info->size++;
+                                instsToExecute.push_back(
+                                    fuse_candidate_inst);
+                            } else {
+                                ++wbOutstanding;
 
-                                // Schedule inst.
-                                if (fuse_op_latency == Cycles(1)) {
-                                    i2e_info->size++;
-                                    instsToExecute.push_back(
-                                        fuse_candidate_inst);
-                                } else {
-                                    ++wbOutstanding;
+                                FUCompletion *execution =
+                                    new FUCompletion(fuse_candidate_inst,
+                                                     idx, this);
 
-                                    FUCompletion *execution =
-                                        new FUCompletion(fuse_candidate_inst,
-                                                         idx, this);
+                                cpu->schedule(execution,
+                                    cpu->clockEdge(Cycles(
+                                        fuse_op_latency - 1)));
+                            }
 
-                                    cpu->schedule(execution,
-                                        cpu->clockEdge(Cycles(
-                                            fuse_op_latency - 1)));
-                                }
+                            DPRINTF(IssueWidth, "Will issue *fused*"
+                                    " instruction \"%s\" with width %d"
+                                    " to a FU (%d) with available issueCap %d"
+                                    " and widthCap %d.\n",
+                                    fuse_candidate_inst->staticInst->
+                                        disassemble(
+                                            fuse_candidate_inst->instAddr()),
+                                    fuse_candidate_inst->getWidthVal(),
+                                    idx,
+                                    fuPool->getFUIssueCap(idx),
+                                    fuPool->getFUWidthCap(idx));
 
-                                // Does not need to free FU, as the original
-                                // inst already took care of that.
+                            // Does not need to free FU, as the original
+                            // inst already took care of that.
+                            // Instead, deplete FU capacity.
+                            fuPool->useFUIssueCap(idx);
+                            fuPool->useFUWidthCap(idx,
+                                fuse_candidate_inst->getWidthVal());
 
-                                DPRINTF(IQ, "Thread %i: Issuing *fused*"
-                                        " instruction PC %s [sn:%lli]\n",
-                                        tid, fuse_candidate_inst->pcState(),
-                                        fuse_candidate_inst->seqNum);
+                            DPRINTF(IQ, "Thread %i: Issuing"
+                                    " instruction PC %s [sn:%lli]\n",
+                                    tid, fuse_candidate_inst->pcState(),
+                                    fuse_candidate_inst->seqNum);
 
-                                readyInsts[fuse_op_class].pop();
+                            readyInsts[fuse_op_class].pop();
 
-                                if (!readyInsts[fuse_op_class].empty()) {
-                                    // The new ready inst for this OpClass is
-                                    // certainly older than this one, so it is
-                                    // inserted after it in the listOrder.
-                                    moveToYoungerInst(fuse_order_it);
-                                } else {
-                                    // Mark that there are no ready insts for
-                                    // this OpClass.
-                                    readyIt[fuse_op_class] = listOrder.end();
-                                    queueOnList[fuse_op_class] = false;
-                                }
+                            if (!readyInsts[fuse_op_class].empty()) {
+                                // The new ready inst for this OpClass is
+                                // certainly older than this one, so it is
+                                // inserted after it in the listOrder.
+                                moveToYoungerInst(fuse_order_it);
+                            } else {
+                                // Mark that there are no ready insts for
+                                // this OpClass.
+                                readyIt[fuse_op_class] = listOrder.end();
+                                queueOnList[fuse_op_class] = false;
+                            }
 
-                                // Mark instruction as issued.
-                                fuse_candidate_inst->setIssued();
-                                ++total_issued;
+                            // Mark instruction as issued.
+                            fuse_candidate_inst->setIssued();
+                            ++total_issued;
 
 #if TRACING_ON
-                                fuse_candidate_inst->issueTick =
-                                    curTick() - fuse_candidate_inst->fetchTick;
+                            fuse_candidate_inst->issueTick =
+                                curTick() - fuse_candidate_inst->fetchTick;
 #endif
 
-                                // Free from IQ.
-                                ++freeEntries;
-                                count[tid]--;
-                                fuse_candidate_inst->clearInIQ();
+                            // Free from IQ.
+                            ++freeEntries;
+                            count[tid]--;
+                            fuse_candidate_inst->clearInIQ();
 
-                                // Remove from ordered ready list.
-                                if (order_it == fuse_order_it) {
-                                    // Must also advance the order_it iterator.
-                                    order_it = fuse_order_it =
-                                        listOrder.erase(fuse_order_it);
-                                } else {
-                                    fuse_order_it =
-                                        listOrder.erase(fuse_order_it);
-                                }
-
-                                statIssuedInstType[tid][fuse_op_class]++;
-                                statIssuedWidthClass[
-                                    static_cast<int>(fuse_width_class)]++;
-                                if (fuse_candidate_inst->isVector())
-                                    statIssuedVecElemSize[
-                                        static_cast<int>(fuse_width_class)]++;
-
-                                // FIXME: Only one fuse inst can be issued per
-                                // opportunity.
-                                break;
+                            // Remove from ordered ready list.
+                            if (order_it == fuse_order_it) {
+                                // Must also advance the order_it iterator.
+                                order_it = fuse_order_it =
+                                    listOrder.erase(fuse_order_it);
                             } else {
-                                // Fuse opportunity lost due to width mismatch.
-                                statFuseFailNoMatch[
-                                    static_cast<int>(fuse_width_class)]++;
-                                DPRINTF(IQFuse,
-                                        "\tIgnored inst \"%s\" due to width"
-                                        " mismatch.\n",
-                                        fuse_candidate_inst->staticInst->
-                                            disassemble(
-                                                issuing_inst->instAddr()));
+                                fuse_order_it =
+                                    listOrder.erase(fuse_order_it);
                             }
-                        } else {
-                            DPRINTF(IQFuse,
-                                    "\tIgnored inst \"%s\" due to fuse type"
-                                    " mismatch.",
-                                    fuse_candidate_inst->staticInst->
-                                        disassemble(issuing_inst->instAddr()));
-                        }
 
-                        ++fuse_order_it;
+                            statIssuedInstType[tid][fuse_op_class]++;
+                            statIssuedWidthClass[
+                                static_cast<int>(fuse_width_class)]++;
+                            if (fuse_candidate_inst->isVector())
+                                statIssuedVecElemSize[
+                                    static_cast<int>(fuse_width_class)]++;
+
+                            // FIXME: Only one fuse inst can be issued per
+                            // opportunity.
+                            break;
+                        } else {
+                            // Fuse opportunity lost due to width mismatch.
+                            statFuseFailNoMatch[
+                                static_cast<int>(fuse_width_class)]++;
+                            DPRINTF(IQFuse,
+                                    "\tIgnored inst \"%s\" due to width"
+                                    " mismatch.\n",
+                                    fuse_candidate_inst->staticInst->
+                                        disassemble(
+                                            issuing_inst->instAddr()));
+                        }
+                    } else {
+                        DPRINTF(IQFuse,
+                                "\tIgnored inst \"%s\" due to fuse type"
+                                " mismatch.",
+                                fuse_candidate_inst->staticInst->
+                                    disassemble(issuing_inst->instAddr()));
                     }
+
+                    ++fuse_order_it;
                 }
             }
             /// MPINHO 12-aug-2019 END ///
@@ -1266,6 +1300,10 @@ InstructionQueue<Impl>::scheduleReadyInsts()
 
     numIssuedDist.sample(total_issued);
     iqInstsIssued+= total_issued;
+
+    /// MPINHO 23-aug-2019 BEGIN ///
+    fuPool->updateStats();
+    /// MPINHO 23-aug-2019 END ///
 
     // If we issued any instructions, tell the CPU we had activity.
     // @todo If the way deferred memory instructions are handeled due to
@@ -1807,6 +1845,12 @@ InstructionQueue<Impl>::addIfReady(const DynInstPtr &inst)
         // As non-memory instruction is ready to issue, generate width
         // information.
         widthDecoder.addWidthInfo(inst);
+
+        // Generate width trace.
+        DPRINTF(Width, "Width (opclass:%s): %s [sn:%lli].\n",
+                Enums::OpClassStrings[static_cast<int>(op_class)],
+                inst->getWidth().to_string(),
+                inst->seqNum);
         /// MPINHO 07-aug-2019 END ///
 
         readyInsts[op_class].push(inst);

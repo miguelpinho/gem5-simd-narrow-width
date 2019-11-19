@@ -45,6 +45,8 @@
 #include <sstream>
 
 #include "cpu/func_unit.hh"
+#include "debug/FU.hh"
+#include "debug/FUIdle.hh"
 
 using namespace std;
 
@@ -82,9 +84,14 @@ FUPool::~FUPool()
 
 // Constructor
 FUPool::FUPool(const Params *p)
-    : SimObject(p)
+    : SimObject(p),
+      breakevenTH(p->breakevenThreshold)
 {
     numFU = 0;
+    numFPFU = 0;
+    numSimdFU = 0;
+    simdIssueCap = 0;
+    simdWidthCap = 0;
 
     funcUnits.clear();
 
@@ -131,9 +138,23 @@ FUPool::FUPool(const Params *p)
                     pipelined[(*j)->opClass] = false;
             }
 
-            fu->setFuseCap((*i)->fuseCap); /// MPINHO 07-aug-2019 ///
+            /// MPINHO 22-aug-2019 BEGIN ///
+            int newIssueCap = (*i)->fuseCap + 1;
+            int newWidthCap = (*i)->widthCap;
+            fu->setIssueCap(newIssueCap);
+            fu->setWidthCap(newWidthCap);
+            if ((*i)->simd) {
+                if (newIssueCap > simdIssueCap)
+                    simdIssueCap = newIssueCap;
+                if (newWidthCap > simdWidthCap)
+                    simdWidthCap = newWidthCap;
+            }
+            fu->setSimd((*i)->simd);
+            /// MPINHO 22-aug-2019 END ///
 
             numFU++;
+            if ((*i)->floatp) numFPFU++;
+            if ((*i)->simd) numSimdFU++;
 
             //  Add the appropriate number of copies of this FU to the list
             fu->name = (*i)->name() + "(0)";
@@ -142,6 +163,8 @@ FUPool::FUPool(const Params *p)
             for (int c = 1; c < (*i)->number; ++c) {
                 ostringstream s;
                 numFU++;
+                if ((*i)->floatp) numFPFU++;
+                if ((*i)->simd) numSimdFU++;
                 FuncUnit *fu2 = new FuncUnit(*fu);
 
                 s << (*i)->name() << "(" << c << ")";
@@ -156,7 +179,76 @@ FUPool::FUPool(const Params *p)
     for (int i = 0; i < numFU; i++) {
         unitBusy[i] = false;
     }
+
+    /// MPINHO 23-oct-2019 BEGIN ///
+    simdIdle.resize(numSimdFU);
+
+    for (int i = 0; i < numSimdFU; i++) {
+        simdIdle[i] = 0;
+    }
+    /// MPINHO 23-oct-2019 END ///
+
 }
+
+/// MPINHO 23-aug-2019 BEGIN ///
+void
+FUPool::regStats()
+{
+    statSimdFUUsed
+        .init(0, numSimdFU, 1)
+        .name(name() + ".simd_fu_used")
+        .desc("dist of the number of Simd FU used")
+        ;
+    statSimdFUIssued
+        .init(0, numSimdFU * simdIssueCap, 1)
+        .name(name() + ".simd_fu_issued")
+        .desc("dist total number of Simd insts issued")
+        ;
+    statSimdFUWidth
+        .init(0, numSimdFU * simdWidthCap, 8)
+        .name(name() + ".simd_fu_width")
+        .desc("dist total Simd width used")
+        ;
+    statSimdFUExtra
+        .init(0, numSimdFU * (simdIssueCap - 1), 1)
+        .name(name() + ".simd_fu_extra")
+        .desc("dist the total number of extra Simd insts issued")
+        ;
+    statSimdFUIssuePartial
+        .init(numSimdFU, 0, simdIssueCap, 1)
+        .name(name() + ".simd_fu_issue_partial")
+        .desc("dist of insts issued for each Simd FUs")
+        ;
+    statSimdFUWidthPartial
+        .init(numSimdFU, 0, simdWidthCap, 8)
+        .name(name() + ".simd_fu_width_partial")
+        .desc("dist of width used by each Simd FUs")
+        ;
+    for (int i = 0; i < numSimdFU; i++) {
+        std::ostringstream ss;
+        ss << "(" << i << ")";
+        statSimdFUIssuePartial.subname(i, ss.str());
+        statSimdFUWidthPartial.subname(i, ss.str());
+    }
+    statFPFUUsed
+        .init(0, numFPFU, 1)
+        .name(name() + ".fp_fu_used")
+        .desc("dist of the number of FP FUs used")
+        ;
+    statFPSimdFUUsed
+        .init(0, numSimdFU + numFPFU, 1)
+        .name(name() + ".fp_simd_fu_used")
+        .desc("dist of the number of FP+Simd FUs used")
+        ;
+
+    totalSimdIdle
+        .init(numSimdFU)
+        .name(name() + ".totalSimdIdle")
+        .desc("Counters for idle SIMD FU periods over the breakeven "
+              "threshold")
+        ;
+}
+/// MPINHO 23-aug-2019 END ///
 
 int
 FUPool::getUnit(OpClass capability)
@@ -241,16 +333,133 @@ FUPool::dump()
 }
 
 /// MPINHO 13-aug-2019 BEGIN ///
-unsigned
-FUPool::getFUFuseCap(int fu_idx)
+std::string
+FUPool::getFUName(int fu_idx)
 {
-    return funcUnits[fu_idx]->getFuseCap();
+    return funcUnits[fu_idx]->name;
+}
+
+unsigned
+FUPool::getFUIssueCap(int fu_idx)
+{
+    return funcUnits[fu_idx]->getIssueCap();
+}
+
+void
+FUPool::useFUIssueCap(int fu_idx)
+{
+    funcUnits[fu_idx]->useIssueCap();
+}
+
+unsigned
+FUPool::getFUWidthCap(int fu_idx)
+{
+    return funcUnits[fu_idx]->getWidthCap();
+}
+
+void
+FUPool::useFUWidthCap(int fu_idx,
+                      unsigned width)
+{
+    funcUnits[fu_idx]->useWidthCap(width);
+}
+
+void
+FUPool::resetFUCaps()
+{
+    for (int i = 0; i < numFU; ++i) {
+        if (!unitBusy[i]) {
+            funcUnits[i]->resetIssueCap();
+            funcUnits[i]->resetWidthCap();
+        }
+    }
 }
 
 bool
 FUPool::hasCapability(int fu_idx, OpClass capability)
 {
     return funcUnits[fu_idx]->provides(capability);
+}
+
+void
+FUPool::updateStats()
+{
+    int usedFP = 0;
+    int usedSimd = 0, extraSimd = 0;
+    int issuedSimd = 0, totalWidthSimd = 0;
+    // Record stats for used Simd FUs.
+    for (int i = 0; i < numFU; ++i) {
+        if (funcUnits[i]->getUsedIssueCap()) {
+            if (funcUnits[i]->isSimd()) {
+                int issued = funcUnits[i]->getUsedIssueCap();
+                int width = funcUnits[i]->getUsedWidthCap();
+
+                statSimdFUIssuePartial[usedSimd]
+                    .sample(issued);
+                issuedSimd += issued;
+                extraSimd += issued - 1;
+                statSimdFUWidthPartial[usedSimd]
+                    .sample(width);
+                totalWidthSimd += width;
+
+                DPRINTF(FU, "SimdFU(*%d*). Issued: *%d*. Width: *%d*.\n",
+                        usedSimd,
+                        issued,
+                        width);
+
+                ++usedSimd;
+            } else if (funcUnits[i]->isFP()) {
+                ++usedFP;
+            }
+        }
+    }
+
+    statSimdFUUsed.sample(usedSimd);
+    statSimdFUIssued.sample(issuedSimd);
+    statSimdFUWidth.sample(totalWidthSimd);
+    statSimdFUExtra.sample(extraSimd);
+    DPRINTF(FU, "TotalSimdFU used simd FU used: *%d*."
+                " Total issued: *%d*."" Total width: *%d*."
+                " Extra issued: *%d*.\n",
+            usedSimd,
+            issuedSimd,
+            totalWidthSimd,
+            extraSimd);
+
+    statFPFUUsed.sample(usedFP);
+
+    statFPSimdFUUsed.sample(usedFP + usedSimd);
+
+    // Record remaining Simd FUs as unused.
+    for (int i = usedSimd; i < numSimdFU; i++) {
+        statSimdFUIssuePartial[i].sample(0);
+        statSimdFUWidthPartial[i].sample(0);
+    }
+
+    // Update Simd FUs idle counters.
+    for (int i = 0; i < usedSimd; i++) {
+        // Reset idle counter.
+        simdIdle[i] = 0;
+    }
+    for (int i = usedSimd; i < numSimdFU; i++) {
+        simdIdle[i]++;
+        if (simdIdle[i] > breakevenTH) {
+            totalSimdIdle[i]++;
+        }
+    }
+
+    if (DTRACE(FUIdle)) {
+        std::ostringstream ss_counters, ss_total;
+        for (int i = 0; i < numSimdFU; i++) {
+            ss_counters << "*" << simdIdle[i];
+            ss_total << "*" << (int) totalSimdIdle[i].value();
+        }
+
+        DPRINTF(FUIdle, "Idle counters: %s*."
+                    " Idle total: %s*.\n",
+                ss_counters.str(),
+                ss_total.str());
+    }
 }
 /// MPINHO 13-aug-2019 END ///
 
