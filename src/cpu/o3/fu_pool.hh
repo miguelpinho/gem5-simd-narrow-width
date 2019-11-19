@@ -52,7 +52,6 @@
 
 #include "base/statistics.hh"
 #include "cpu/op_class.hh"
-#include "debug/FU.hh"
 #include "params/FUPool.hh"
 #include "sim/sim_object.hh"
 
@@ -128,8 +127,11 @@ class FUPool : public SimObject
 
     /// MPINHO 23-aug-2019 BEGIN ///
     /** Number of SIMD FUs. */
+    int numFPFU;
     int numSimdFU;
     int simdIssueCap, simdWidthCap;
+    int breakevenTH;
+    std::vector<int> simdIdle;
     /// MPINHO 23-aug-2019 END ///
 
     /** Functional units. */
@@ -137,13 +139,21 @@ class FUPool : public SimObject
 
     typedef std::vector<FuncUnit *>::iterator fuListIterator;
 
+    /// MPINHO 23-aug-2019 BEGIN ///
     /** Stats. */
     Stats::Distribution statSimdFUUsed;
     Stats::Distribution statSimdFUIssued;
-    Stats::Distribution statSimdFUTotalWidth;
+    Stats::Distribution statSimdFUWidth;
     Stats::Distribution statSimdFUExtra;
-    Stats::VectorDistribution statSimdFUIssueUsed;
-    Stats::VectorDistribution statSimdFUWidthUsed;
+    Stats::VectorDistribution statSimdFUIssuePartial;
+    Stats::VectorDistribution statSimdFUWidthPartial;
+
+    Stats::Distribution statFPFUUsed;
+    Stats::Distribution statFPSimdFUUsed;
+
+    Stats::Vector totalSimdIdle;
+    /// MPINHO 23-aug-2019 END ///
+
 
   public:
     typedef FUPoolParams Params;

@@ -52,6 +52,7 @@ FuncUnit::FuncUnit()
     availIssueCap = 0;
     availWidthCap = 0;
     simd = false;
+    floatp = false;
     /// MPINHO 22-aug-2019 END ///
 }
 
@@ -72,6 +73,7 @@ FuncUnit::FuncUnit(const FuncUnit &fu)
     widthCap = fu.widthCap;
     availWidthCap = fu.widthCap;
     simd = fu.simd;
+    floatp = fu.floatp;
     /// MPINHO 22-aug-2019 END ///
 }
 
@@ -109,10 +111,22 @@ FuncUnit::setSimd(bool _simd)
     simd = _simd;
 }
 
+void
+FuncUnit::setFP(bool _floatp)
+{
+    floatp = _floatp;
+}
+
 bool
 FuncUnit::isSimd()
 {
     return simd;
+}
+
+bool
+FuncUnit::isFP()
+{
+    return floatp;
 }
 /// MPINHO 22-aug-2019 END ///
 

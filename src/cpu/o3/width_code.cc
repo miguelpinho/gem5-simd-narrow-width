@@ -69,6 +69,20 @@ VecWidthCode::to_string()
 }
 
 VecWidthCode
+VecWidthCode::generate1OpPairLong()
+{
+    assert((nElem & 1) == 0);
+
+    VecWidthCode res(nElem >> 1, eBits << 1);
+
+    int pos = 0;
+    for (int i = 0; i < nElem; i += 2) {
+        res.code[pos++] = std::max(code[i], code[i+1]);
+    }
+    return res;
+}
+
+VecWidthCode
 VecWidthCode::generate1OpAcross()
 {
     return VecWidthCode(nElem, eBits, maxWidth());
