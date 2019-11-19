@@ -73,5 +73,7 @@ class FUDesc(SimObject):
         "if their width and type match")
     widthCap = Param.Int(64, "width functional unit has available")
     simd = Param.Bool(False, "whether this functional unit is simd")
+    floatp = Param.Bool(False, "whether this functional unit is"
+                        " floating-point")
     ### MPINHO 22-aug-2019 END ###
     opList = VectorParam.OpDesc("operation classes for this FU type")

@@ -82,10 +82,30 @@ class WidthDecoder
     /** Return width mask of a vector instruction. */
     VecWidthCode vecInstWidthMask(const DynInstPtr &inst);
 
+    /** Return width of one of the integer source registers. */
+    int
+    intSrcRegWidth(const DynInstPtr &inst, uint8_t op);
+
     /** Return width maks of one of the vector source registers. */
     VecWidthCode
     vecSrcRegWidthMask(const DynInstPtr &inst, uint8_t q, uint8_t size,
                        uint8_t op);
+
+    /** Return width maks of one of the widened vector source registers. */
+    VecWidthCode
+    vecSrcRegWidthMaskWide(const DynInstPtr &inst, uint8_t q, uint8_t size,
+                           uint8_t op);
+
+    /** Return width maks of one of the indexed vector source registers. */
+    VecWidthCode
+    vecSrcRegWidthMaskIndex(const DynInstPtr &inst, uint8_t size,
+                            uint8_t op, uint8_t idx);
+
+    /** Return width maks of one of the indexed vector source registers. */
+    VecWidthCode
+    vecSrcRegWidthMaskBroadcast(const DynInstPtr &inst, uint8_t q,
+                                uint8_t size, uint8_t op,
+                                uint8_t idx);
 
     /** Returns the width information for a given instruction. */
     void addWidthInfo(const DynInstPtr &inst);
@@ -102,18 +122,50 @@ class WidthDecoder
     VecWidthCode widthOp1VectorRegl(const DynInstPtr &inst,
                                     uint8_t q, uint8_t size,
                                     uint8_t op1);
+    VecWidthCode widthOp1VectorLong(const DynInstPtr &inst,
+                                    uint8_t q, uint8_t size,
+                                    uint8_t op1);
+    VecWidthCode widthOp1VectorPairLong(const DynInstPtr &inst,
+                                        uint8_t q, uint8_t size,
+                                        uint8_t op1);
     VecWidthCode widthOp1VectorAcross(const DynInstPtr &inst,
                                       uint8_t q, uint8_t size,
                                       uint8_t op1);
+    VecWidthCode widthOp1VectorIndex(const DynInstPtr &inst,
+                                     uint8_t size,
+                                     uint8_t op1, uint8_t idx);
+    VecWidthCode widthOp1VectorBroadcast(const DynInstPtr &inst,
+                                         uint8_t q, uint8_t size,
+                                         uint8_t op1, uint8_t idx);
     VecWidthCode widthOp2VectorRegl(const DynInstPtr &inst,
                                     uint8_t q, uint8_t size,
                                     uint8_t op1, uint8_t op2);
     VecWidthCode widthOp2VectorPair(const DynInstPtr &inst,
                                     uint8_t q, uint8_t size,
                                     uint8_t op1, uint8_t op2);
+    VecWidthCode widthOp2VectorMix(const DynInstPtr &inst,
+                                    uint8_t q, uint8_t size,
+                                    uint8_t op1, uint8_t op2,
+                                    int idx, int stride);
+    VecWidthCode widthOp2VectorJoin(const DynInstPtr &inst,
+                                    uint8_t q, uint8_t size,
+                                    uint8_t op1, uint8_t op2,
+                                    bool lower);
+    VecWidthCode widthOp2VectorLong(const DynInstPtr &inst,
+                                    uint8_t q, uint8_t size,
+                                    uint8_t op1, uint8_t op2);
+    VecWidthCode widthOp2VectorWide(const DynInstPtr &inst,
+                                    uint8_t q, uint8_t size,
+                                    uint8_t op1, uint8_t op2);
     VecWidthCode widthOpAcrossVector(const DynInstPtr &inst,
                                      uint8_t q, uint8_t size,
                                      uint8_t op);
+    VecWidthCode widthOp1GprBroadcast(const DynInstPtr &inst,
+                                      uint8_t q, uint8_t size,
+                                      uint8_t op1);
+    VecWidthCode widthOp1ImmBroadcast(const DynInstPtr &inst,
+                                      uint8_t q, uint8_t size,
+                                      uint64_t val);
 
   protected:
     std::string _name;
@@ -126,8 +178,20 @@ class WidthDecoder
 
     template <int Size, typename Elem>
     VecWidthCode
-    getWidthVecReg(const DynInstPtr &inst, int nElem, int nBits,
-                   uint8_t op);
+    getWidthVecReg(const DynInstPtr &inst, int nElem,
+                   int nBits, uint8_t op);
+    template <int Size, typename Elem>
+    VecWidthCode
+    getWidthVecRegIndex(const DynInstPtr &inst,
+                        int nBits, uint8_t op, uint8_t idx);
+    template <int Size, typename Elem>
+    VecWidthCode
+    getWidthVecRegBroadcast(const DynInstPtr &inst, int nElem,
+                            int nBits, uint8_t op, uint8_t idx);
+    template <int Size, typename Elem>
+    VecWidthCode
+    getWidthVecRegWiden(const DynInstPtr &inst, int nElem, int nBits,
+                        uint8_t op, bool low);
 
     /// MPINHO 08-may-2019 BEGIN ///
     ///////////////////
@@ -158,16 +222,32 @@ class WidthDecoder
     WidthInfo decode(const DynInstPtr &inst);
     /** Decode Neon 3Same instruction width. */
     WidthInfo decodeNeon3Same(const DynInstPtr &inst);
+    /** Decode Neon 3Same instruction width. */
+    WidthInfo decodeNeon3Diff(const DynInstPtr &inst);
     /** Decode Neon 2RegMisc instruction width. */
     WidthInfo decodeNeon2RegMisc(const DynInstPtr &inst);
     /** Decode Neon AcrossLanes instruction width. */
     WidthInfo decodeNeonAcrossLanes(const DynInstPtr &inst);
+    /** Decode Neon ShiftByImm instruction width. */
+    WidthInfo decodeNeonShiftByImm(const DynInstPtr &inst);
+    /** Decode Neon ModImm instruction width. */
+    WidthInfo decodeNeonModImm(const DynInstPtr &inst);
+    /** Decode Neon Copy instruction width. */
+    WidthInfo decodeNeonCopy(const DynInstPtr &inst);
+    /** Decode Neon Ext instruction width. */
+    WidthInfo decodeNeonExt(const DynInstPtr &inst);
+    /** Decode Neon ZipUzpTrn instruction width. */
+    WidthInfo decodeNeonZipUzpTrn(const DynInstPtr &inst);
+    /** Decode Neon TblTbx instruction width. */
+    WidthInfo decodeNeonTblTbx(const DynInstPtr &inst);
 
     /////////////////////////
     // Consts
     /////////////////////////
     static constexpr int Num_VecElemSize =
         static_cast<int>(VecElemSize::Num_VecElemSize);
+    static constexpr int Num_WidthClass =
+        static_cast<int>(WidthClass::Num_WidthClass);
     static const std::array<const int, Num_VecElemSize> Bits_VecElemSize;
     static const std::array<const VecElemSize, 4> SizeToVecElemSize;
 
@@ -175,13 +255,20 @@ class WidthDecoder
     // Stats
     /////////////////////////
     /** Stat for width of vector operand elements, by vector element size. */
-    std::array<Stats::Distribution, Num_VecElemSize> statVectorOpElemWidth;
+    std::array<Stats::Distribution, Num_VecElemSize>
+      statVectorOpElemWidthBySize;
     /** Stat for total vector operand width, by vector element size. */
-    std::array<Stats::Distribution, Num_VecElemSize> statVectorOpTotalWidth;
+    std::array<Stats::Distribution, Num_VecElemSize>
+      statVectorOpTotalWidthBySize;
     /** Stat for width of vector inst elements, by vector element size. */
-    std::array<Stats::Distribution, Num_VecElemSize> statVectorInstElemWidth;
+    std::array<Stats::Distribution, Num_VecElemSize>
+      statVectorInstElemWidthBySize;
     /** Stat for total vector inst width, by vector element size. */
-    std::array<Stats::Distribution, Num_VecElemSize> statVectorInstTotalWidth;
+    std::array<Stats::Distribution, Num_VecElemSize>
+      statVectorInstTotalWidthBySize;
+
+    /** Stat for total vector inst width, by width class. */
+    Stats::VectorDistribution statVectorInstTotalWidthByClass;
 
     /** Sample width distribution for vector operands. */
     void sampleVecOp(VecWidthCode &mask, uint8_t size);

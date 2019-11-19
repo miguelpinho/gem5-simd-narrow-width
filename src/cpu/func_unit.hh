@@ -68,13 +68,13 @@ class FUDesc : public SimObject
     /// MPINHO 22-aug-2019 BEGIN ///
     unsigned fuseCap;
     unsigned widthCap;
-    bool simd;
+    bool simd, floatp;
     /// MPINHO 22-aug-2019 END ///
 
     FUDesc(const FUDescParams *p)
         : SimObject(p), opDescList(p->opList), number(p->count),
           fuseCap(p->fuseCap), widthCap(p->widthCap),
-          simd(p->simd)
+          simd(p->simd), floatp(p->floatp)
     {};
 };
 
@@ -99,7 +99,7 @@ class FuncUnit
     /// MPINHO 22-aug-2019 BEGIN ///
     unsigned issueCap, availIssueCap;
     unsigned widthCap, availWidthCap;
-    bool simd;
+    bool simd, floatp;
     /// MPINHO 22-aug-2019 END ///
 
   public:
@@ -113,7 +113,9 @@ class FuncUnit
     void setIssueCap(unsigned _issueCap);
     void setWidthCap(unsigned _widthCap);
     void setSimd(bool _simd);
+    void setFP(bool _floatp);
     bool isSimd();
+    bool isFP();
     /// MPINHO 22-aug-2019 END ///
 
     bool provides(OpClass capability);
